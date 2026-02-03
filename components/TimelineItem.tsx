@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { ItineraryItem, TransportType } from '../types';
 import { TransportIcon } from './TransportIcon';
+import { NearbyRestaurants } from './NearbyRestaurants';
 import { getPlaceInsight } from '../utils/gemini';
 import { downloadICS } from '../utils/calendar';
 import { ITINERARY_DATA } from '../constants'; // Need to access date context
@@ -29,6 +30,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ item, isLast, onActi
   const [copied, setCopied] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiInsight, setAiInsight] = useState<string | null>(null);
+  const [showNearbyRestaurants, setShowNearbyRestaurants] = useState(false);
 
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -104,8 +106,8 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ item, isLast, onActi
             <button
               onClick={handleAiInsight}
               className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] md:text-xs font-bold border transition-all ${aiInsight
-                  ? 'bg-purple-100 text-purple-700 border-purple-200'
-                  : 'bg-white text-purple-600 border-purple-100 hover:bg-purple-50'
+                ? 'bg-purple-100 text-purple-700 border-purple-200'
+                : 'bg-white text-purple-600 border-purple-100 hover:bg-purple-50'
                 }`}
               title="AI 隱藏密技"
             >
@@ -211,6 +213,15 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ item, isLast, onActi
               </div>
             </div>
           )}
+
+          {/* Nearby Restaurants */}
+          <NearbyRestaurants
+            lat={item.coordinates.lat}
+            lng={item.coordinates.lng}
+            locationName={item.title}
+            isExpanded={showNearbyRestaurants}
+            onToggle={() => setShowNearbyRestaurants(!showNearbyRestaurants)}
+          />
         </div>
 
         {/* Footer: Address */}

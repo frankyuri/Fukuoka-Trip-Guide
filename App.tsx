@@ -1,12 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { ITINERARY_DATA } from './constants';
 import { TimelineItem } from './components/TimelineItem';
-import { DayMap } from './components/DayMap';
 import { Footer } from './components/Footer';
 import { WeatherWidget } from './components/WeatherWidget';
-import { CurrencyWidget } from './components/CurrencyWidget';
 import { ShareButton } from './components/ShareButton';
-import { Plane, Map as MapIcon, List } from 'lucide-react';
+import { Plane, Map as MapIcon, List, Loader2 } from 'lucide-react';
+
+// Lazy load heavy components for code splitting
+const DayMap = lazy(() => import('./components/DayMap').then(m => ({ default: m.DayMap })));
+const CurrencyWidget = lazy(() => import('./components/CurrencyWidget').then(m => ({ default: m.CurrencyWidget })));
+
+// Loading fallback component
+const MapLoadingFallback = () => (
+  <div className="w-full h-full bg-slate-100 rounded-2xl flex items-center justify-center">
+    <div className="flex flex-col items-center gap-2 text-slate-400">
+      <Loader2 className="animate-spin" size={32} />
+      <span className="text-sm font-medium">載入地圖中...</span>
+    </div>
+  </div>
+);
+
+const WidgetLoadingFallback = () => (
+  <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm animate-pulse">
+    <div className="h-24 bg-gray-100 rounded"></div>
+  </div>
+);
 
 const App: React.FC = () => {
   // Read initial day from URL for share link support
@@ -156,7 +174,9 @@ const App: React.FC = () => {
               transition-all duration-300
               ${mobileViewMode === 'map' ? 'h-[75vh] w-full rounded-3xl shadow-2xl' : 'h-[350px] lg:sticky lg:top-8 lg:h-[calc(100vh-60px)]'}
             `}>
-              <DayMap items={activeDay.items} activeItemId={activeItemId} />
+              <Suspense fallback={<MapLoadingFallback />}>
+                <DayMap items={activeDay.items} activeItemId={activeItemId} />
+              </Suspense>
             </div>
 
             {/* Mobile-only Hint under map when in map mode */}
@@ -168,7 +188,9 @@ const App: React.FC = () => {
 
             {/* Currency Widget - Desktop Only */}
             <div className="hidden lg:block mt-6">
-              <CurrencyWidget />
+              <Suspense fallback={<WidgetLoadingFallback />}>
+                <CurrencyWidget />
+              </Suspense>
             </div>
           </div>
 
