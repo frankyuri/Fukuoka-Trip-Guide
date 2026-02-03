@@ -1,5 +1,5 @@
-// Google Places API Nearby Search
-// Documentation: https://developers.google.com/maps/documentation/places/web-service/search-nearby
+// Google Places API using Google Maps JavaScript SDK
+// This uses the Places Library which handles CORS automatically
 
 export interface NearbyRestaurant {
   placeId: string;
@@ -12,12 +12,6 @@ export interface NearbyRestaurant {
   distance?: number;
   photoUrl?: string;
   types: string[];
-}
-
-interface PlacesSearchResponse {
-  results: any[];
-  status: string;
-  error_message?: string;
 }
 
 // Calculate distance between two coordinates in meters
@@ -36,15 +30,36 @@ const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: numbe
   return R * c;
 };
 
-// Get photo URL from photo reference
-const getPhotoUrl = (photoReference: string, maxWidth: number = 200): string => {
-  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
-  return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${maxWidth}&photo_reference=${photoReference}&key=${apiKey}`;
-};
-
 // Cache for nearby restaurants to avoid repeated API calls
 const restaurantCache = new Map<string, { data: NearbyRestaurant[], timestamp: number }>();
 const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+
+// Wait for Google Maps to load
+const waitForGoogleMaps = (): Promise<void> => {
+  return new Promise((resolve) => {
+    if ((window as any).google?.maps?.places) {
+      resolve();
+      return;
+    }
+    
+    const checkLoaded = () => {
+      if ((window as any).google?.maps?.places) {
+        resolve();
+      } else {
+        setTimeout(checkLoaded, 100);
+      }
+    };
+    
+    if ((window as any).googleMapsLoaded) {
+      checkLoaded();
+    } else {
+      window.addEventListener('google-maps-loaded', checkLoaded);
+    }
+    
+    // Timeout after 10 seconds
+    setTimeout(() => resolve(), 10000);
+  });
+};
 
 export const searchNearbyRestaurants = async (
   lat: number, 
@@ -59,61 +74,65 @@ export const searchNearbyRestaurants = async (
     return cached.data;
   }
 
-  const apiKey = process.env.GOOGLE_PLACES_API_KEY;
-  
-  if (!apiKey) {
-    console.warn('Google Places API Key not configured');
-    return getMockRestaurants(lat, lng);
-  }
-
   try {
-    // Using Places API Nearby Search
-    const url = new URL('https://maps.googleapis.com/maps/api/place/nearbysearch/json');
-    url.searchParams.set('location', `${lat},${lng}`);
-    url.searchParams.set('radius', radius.toString());
-    url.searchParams.set('type', 'restaurant');
-    url.searchParams.set('language', 'ja');
-    url.searchParams.set('key', apiKey);
-
-    // Note: Direct API calls from browser will fail due to CORS
-    // We need to use a proxy or the Places Library from Google Maps JavaScript API
-    // For now, using the JavaScript API approach
+    // Wait for Google Maps to be ready
+    await waitForGoogleMaps();
     
-    const response = await fetch(url.toString());
+    const google = (window as any).google;
     
-    if (!response.ok) {
-      throw new Error('API request failed');
-    }
-
-    const data: PlacesSearchResponse = await response.json();
-    
-    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-      console.error('Places API error:', data.status, data.error_message);
+    if (!google?.maps?.places) {
+      console.warn('Google Maps Places library not loaded');
       return getMockRestaurants(lat, lng);
     }
 
-    const restaurants: NearbyRestaurant[] = data.results.map((place: any) => ({
-      placeId: place.place_id,
-      name: place.name,
-      rating: place.rating,
-      userRatingsTotal: place.user_ratings_total,
-      priceLevel: place.price_level,
-      address: place.vicinity || place.formatted_address || '',
-      isOpen: place.opening_hours?.open_now,
-      distance: calculateDistance(lat, lng, place.geometry.location.lat, place.geometry.location.lng),
-      photoUrl: place.photos?.[0]?.photo_reference 
-        ? getPhotoUrl(place.photos[0].photo_reference) 
-        : undefined,
-      types: place.types || []
-    }));
+    // Create a temporary div for PlacesService (required by API)
+    const mapDiv = document.createElement('div');
+    const service = new google.maps.places.PlacesService(mapDiv);
+    
+    const location = new google.maps.LatLng(lat, lng);
+    
+    const request = {
+      location: location,
+      radius: radius,
+      type: 'restaurant',
+      language: 'ja'
+    };
 
-    // Sort by distance
-    restaurants.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+    return new Promise((resolve) => {
+      service.nearbySearch(request, (results: any[], status: string) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+          const restaurants: NearbyRestaurant[] = results.slice(0, 10).map((place: any) => ({
+            placeId: place.place_id,
+            name: place.name,
+            rating: place.rating,
+            userRatingsTotal: place.user_ratings_total,
+            priceLevel: place.price_level,
+            address: place.vicinity || '',
+            isOpen: place.opening_hours?.isOpen?.() ?? place.opening_hours?.open_now,
+            distance: calculateDistance(
+              lat, lng, 
+              place.geometry.location.lat(), 
+              place.geometry.location.lng()
+            ),
+            photoUrl: place.photos?.[0]?.getUrl({ maxWidth: 200 }),
+            types: place.types || []
+          }));
 
-    // Cache the results
-    restaurantCache.set(cacheKey, { data: restaurants, timestamp: Date.now() });
+          // Sort by distance
+          restaurants.sort((a, b) => (a.distance || 0) - (b.distance || 0));
 
-    return restaurants.slice(0, 10); // Return top 10
+          // Cache the results
+          restaurantCache.set(cacheKey, { data: restaurants, timestamp: Date.now() });
+
+          resolve(restaurants);
+        } else if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
+          resolve([]);
+        } else {
+          console.error('Places API error:', status);
+          resolve(getMockRestaurants(lat, lng));
+        }
+      });
+    });
   } catch (error) {
     console.error('Error fetching nearby restaurants:', error);
     return getMockRestaurants(lat, lng);

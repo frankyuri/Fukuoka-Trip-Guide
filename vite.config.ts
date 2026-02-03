@@ -10,7 +10,19 @@ export default defineConfig(({ mode }) => {
         port: 3000,
         host: '0.0.0.0',
       },
-      plugins: [react()],
+      plugins: [
+        react(),
+        // Inject Google Places API Key into index.html
+        {
+          name: 'inject-google-api-key',
+          transformIndexHtml(html) {
+            return html.replace(
+              'GOOGLE_PLACES_API_KEY_PLACEHOLDER',
+              env.GOOGLE_PLACES_API_KEY || ''
+            );
+          }
+        }
+      ],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
