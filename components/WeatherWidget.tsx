@@ -52,6 +52,16 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ date }) => {
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    // Simple in-memory cache to avoid repeated API calls
+    const cacheKey = `weather_fukuoka`;
+    const cached = (window as any).__weatherCache?.[cacheKey];
+
+    // Use cache if it's less than 10 minutes old
+    if (cached && Date.now() - cached.timestamp < 10 * 60 * 1000) {
+      processWeatherData(cached.data, date);
+      return;
+    }
+
     const fetchWeather = async () => {
       setLoading(true);
       setError(false);
@@ -59,9 +69,78 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ date }) => {
         const response = await fetch(
           'https://api.open-meteo.com/v1/forecast?latitude=33.5902&longitude=130.4017&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo'
         );
-        
+
         if (!response.ok) throw new Error('API Error');
-        
+
+        const data = await response.json();
+
+        // Cache the response
+        if (!(window as any).__weatherCache) {
+          (window as any).__weatherCache = {};
+        }
+        (window as any).__weatherCache[cacheKey] = { data, timestamp: Date.now() };
+
+        processWeatherData(data, date);
+      } catch (err) {
+        console.error("Weather fetch error:", err);
+        setError(true);
+        setLoading(false);
+      }
+    };
+
+    fetchWeather();
+  }, [date]);
+
+  const processWeatherData = (data: any, dateToMatch: string) => {
+    const dateMatch = dateToMatch.match(/(\d{1,2})\/(\d{1,2})/);
+    let targetIndex = -1;
+
+    if (dateMatch) {
+      const month = dateMatch[1].padStart(2, '0');
+      const day = dateMatch[2].padStart(2, '0');
+      const targetDateString = `-${month}-${day}`;
+      targetIndex = data.daily.time.findIndex((t: string) => t.endsWith(targetDateString));
+    }
+
+    if (targetIndex !== -1) {
+      const code = data.daily.weather_code[targetIndex];
+      setWeather({
+        tempHigh: Math.round(data.daily.temperature_2m_max[targetIndex]),
+        tempLow: Math.round(data.daily.temperature_2m_min[targetIndex]),
+        condition: getWeatherConditionText(code),
+        icon: getWeatherIcon(code),
+        precip: data.daily.precipitation_probability_max[targetIndex],
+        isForecastMatch: true
+      });
+    } else {
+      const currentCode = data.current.weather_code;
+      const todayMax = data.daily.temperature_2m_max[0];
+      const todayMin = data.daily.temperature_2m_min[0];
+
+      setWeather({
+        tempHigh: Math.round(todayMax),
+        tempLow: Math.round(todayMin),
+        currentTemp: Math.round(data.current.temperature_2m),
+        condition: getWeatherConditionText(currentCode),
+        icon: getWeatherIcon(currentCode),
+        precip: data.daily.precipitation_probability_max[0],
+        isForecastMatch: false
+      });
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    const fetchWeather = async () => {
+      setLoading(true);
+      setError(false);
+      try {
+        const response = await fetch(
+          'https://api.open-meteo.com/v1/forecast?latitude=33.5902&longitude=130.4017&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo'
+        );
+
+        if (!response.ok) throw new Error('API Error');
+
         const data = await response.json();
 
         const dateMatch = date.match(/(\d{1,2})\/(\d{1,2})/);
@@ -88,7 +167,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ date }) => {
           const currentCode = data.current.weather_code;
           const todayMax = data.daily.temperature_2m_max[0];
           const todayMin = data.daily.temperature_2m_min[0];
-          
+
           setWeather({
             tempHigh: Math.round(todayMax),
             tempLow: Math.round(todayMin),
@@ -141,14 +220,14 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ date }) => {
       </div>
       <div className="flex flex-col items-start min-w-0">
         <div className="flex items-center gap-2">
-            <span className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
-              {weather.isForecastMatch ? 'Forecast' : 'Live Now'}
+          <span className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">
+            {weather.isForecastMatch ? 'Forecast' : 'Live Now'}
+          </span>
+          {weather.precip > 0 && (
+            <span className="text-[10px] font-bold text-blue-500 flex items-center bg-blue-50 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+              <CloudRain size={10} className="mr-1" /> {weather.precip}%
             </span>
-            {weather.precip > 0 && (
-                <span className="text-[10px] font-bold text-blue-500 flex items-center bg-blue-50 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                   <CloudRain size={10} className="mr-1" /> {weather.precip}%
-                </span>
-             )}
+          )}
         </div>
         <div className="flex flex-wrap items-baseline gap-1 md:gap-1.5">
           {weather.isForecastMatch ? (
@@ -162,7 +241,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ date }) => {
               <span className="text-[10px] md:text-xs font-semibold text-slate-400 ml-0.5 whitespace-nowrap">(目前)</span>
             </>
           )}
-          
+
           <span className="text-xs md:text-sm font-medium text-slate-600 ml-1 border-l border-slate-200 pl-2 truncate">
             {weather.condition}
           </span>

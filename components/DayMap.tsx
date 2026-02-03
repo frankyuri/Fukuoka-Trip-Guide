@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as L from 'leaflet';
 import { ItineraryItem, TransportType } from '../types';
-import { Car, Train, Bus, Ship, Footprints, Plane, Filter, X } from 'lucide-react';
+import { Filter, X } from 'lucide-react';
+import { TransportIcon, getTransportLabel } from './TransportIcon';
 
 interface DayMapProps {
   items: ItineraryItem[];
@@ -24,35 +25,14 @@ const TILE_LAYERS = {
   }
 };
 
-const getTransportIcon = (type: TransportType) => {
-  switch (type) {
-    case TransportType.TAXI: return <Car size={16} />;
-    case TransportType.TRAIN: return <Train size={16} />;
-    case TransportType.BUS: return <Bus size={16} />;
-    case TransportType.SHIP: return <Ship size={16} />;
-    case TransportType.WALK: return <Footprints size={16} />;
-    case TransportType.FLIGHT: return <Plane size={16} />;
-    default: return <Car size={16} />;
-  }
-};
-
-const getTransportLabel = (type: TransportType) => {
-  switch (type) {
-    case TransportType.TAXI: return '計程車';
-    case TransportType.TRAIN: return '電車/JR';
-    case TransportType.BUS: return '公車';
-    case TransportType.SHIP: return '船';
-    case TransportType.WALK: return '步行';
-    case TransportType.FLIGHT: return '飛機';
-    default: return type;
-  }
-};
+// Wrapper to render TransportIcon as JSX element for filter menu
+const renderTransportIcon = (type: TransportType) => <TransportIcon type={type} size={16} />;
 
 export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
-  
+
   const [activeFilter, setActiveFilter] = useState<TransportType | 'ALL'>('ALL');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
@@ -75,7 +55,7 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId }) => {
 
     // Add Controls - Position bottom-right to avoid conflict with top filters on mobile
     L.control.zoom({ position: 'bottomright' }).addTo(map);
-    
+
     // Use localized labels for the layer control
     const baseMaps = {
       "標準地圖": standardLayer,
@@ -115,7 +95,7 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId }) => {
 
     const bounds = L.latLngBounds([]);
     let hasVisibleMarkers = false;
-    
+
     items.forEach((item, index) => {
       // Apply Filter
       if (activeFilter !== 'ALL' && item.transportType !== activeFilter) {
@@ -190,45 +170,45 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId }) => {
 
   return (
     <div className="w-full h-full rounded-2xl overflow-hidden shadow-card border border-white/50 relative z-0 group">
-       <div ref={mapContainerRef} className="w-full h-full bg-slate-100" />
-       
-       {/* Custom Filter UI Overlay */}
-       <div className="absolute top-4 left-4 z-[1000] flex flex-col items-start gap-2">
-         <button 
-           onClick={() => setIsFilterOpen(!isFilterOpen)}
-           className={`p-2.5 rounded-lg shadow-md transition-all flex items-center gap-2 ${isFilterOpen ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
-         >
-           {isFilterOpen ? <X size={20} /> : <Filter size={20} />}
-           <span className="text-sm font-bold hidden md:block">
-             {activeFilter === 'ALL' ? '交通篩選' : getTransportLabel(activeFilter)}
-           </span>
-         </button>
+      <div ref={mapContainerRef} className="w-full h-full bg-slate-100" />
 
-         {isFilterOpen && (
-           <div className="bg-white/95 backdrop-blur-sm p-2 rounded-xl shadow-xl border border-gray-100 flex flex-col gap-1 w-40 animate-in fade-in slide-in-from-top-2 duration-200">
+      {/* Custom Filter UI Overlay */}
+      <div className="absolute top-4 left-4 z-[1000] flex flex-col items-start gap-2">
+        <button
+          onClick={() => setIsFilterOpen(!isFilterOpen)}
+          className={`p-2.5 rounded-lg shadow-md transition-all flex items-center gap-2 ${isFilterOpen ? 'bg-primary-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+        >
+          {isFilterOpen ? <X size={20} /> : <Filter size={20} />}
+          <span className="text-sm font-bold hidden md:block">
+            {activeFilter === 'ALL' ? '交通篩選' : getTransportLabel(activeFilter)}
+          </span>
+        </button>
+
+        {isFilterOpen && (
+          <div className="bg-white/95 backdrop-blur-sm p-2 rounded-xl shadow-xl border border-gray-100 flex flex-col gap-1 w-40 animate-in fade-in slide-in-from-top-2 duration-200">
+            <button
+              onClick={() => { setActiveFilter('ALL'); setIsFilterOpen(false); }}
+              className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between ${activeFilter === 'ALL' ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-100'}`}
+            >
+              <span>全部顯示</span>
+              {activeFilter === 'ALL' && <div className="w-2 h-2 bg-primary-500 rounded-full"></div>}
+            </button>
+            <hr className="border-gray-100 my-1" />
+            {Object.values(TransportType).map((type) => (
               <button
-                onClick={() => { setActiveFilter('ALL'); setIsFilterOpen(false); }}
-                className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between ${activeFilter === 'ALL' ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-100'}`}
+                key={type}
+                onClick={() => { setActiveFilter(type); setIsFilterOpen(false); }}
+                className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center gap-2 ${activeFilter === type ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-100'}`}
               >
-                <span>全部顯示</span>
-                {activeFilter === 'ALL' && <div className="w-2 h-2 bg-primary-500 rounded-full"></div>}
+                {renderTransportIcon(type)}
+                {getTransportLabel(type)}
               </button>
-              <hr className="border-gray-100 my-1" />
-              {Object.values(TransportType).map((type) => (
-                <button
-                  key={type}
-                  onClick={() => { setActiveFilter(type); setIsFilterOpen(false); }}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center gap-2 ${activeFilter === type ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-100'}`}
-                >
-                  {getTransportIcon(type)}
-                  {getTransportLabel(type)}
-                </button>
-              ))}
-           </div>
-         )}
-       </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-       <style>{`
+      <style>{`
          .leaflet-popup-content-wrapper {
            border-radius: 12px;
            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);

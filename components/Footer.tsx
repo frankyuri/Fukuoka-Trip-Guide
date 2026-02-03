@@ -1,5 +1,5 @@
 import React from 'react';
-import { Lightbulb, Navigation, Heart } from 'lucide-react';
+import { Lightbulb, Navigation } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (

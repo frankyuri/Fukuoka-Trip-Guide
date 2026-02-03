@@ -1,14 +1,8 @@
 import React, { useState } from 'react';
-import { 
-  MapPin, 
-  Copy, 
-  CheckCheck, 
-  Train, 
-  Bus, 
-  Car, 
-  Ship, 
-  Footprints, 
-  Plane,
+import {
+  MapPin,
+  Copy,
+  CheckCheck,
   Utensils,
   MapPinned,
   Clock,
@@ -20,6 +14,7 @@ import {
   X
 } from 'lucide-react';
 import { ItineraryItem, TransportType } from '../types';
+import { TransportIcon } from './TransportIcon';
 import { getPlaceInsight } from '../utils/gemini';
 import { downloadICS } from '../utils/calendar';
 import { ITINERARY_DATA } from '../constants'; // Need to access date context
@@ -29,18 +24,6 @@ interface TimelineItemProps {
   isLast: boolean;
   onActive?: (id: string | null) => void;
 }
-
-const TransportIcon = ({ type, className }: { type: TransportType, className?: string }) => {
-  switch (type) {
-    case TransportType.TAXI: return <Car size={16} className={className} />;
-    case TransportType.TRAIN: return <Train size={16} className={className} />;
-    case TransportType.BUS: return <Bus size={16} className={className} />;
-    case TransportType.SHIP: return <Ship size={16} className={className} />;
-    case TransportType.WALK: return <Footprints size={16} className={className} />;
-    case TransportType.FLIGHT: return <Plane size={16} className={className} />;
-    default: return <Car size={16} className={className} />;
-  }
-};
 
 export const TimelineItem: React.FC<TimelineItemProps> = ({ item, isLast, onActive }) => {
   const [copied, setCopied] = useState(false);
@@ -65,7 +48,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ item, isLast, onActi
       setAiInsight(null); // Toggle off
       return;
     }
-    
+
     setAiLoading(true);
     const insight = await getPlaceInsight(item.title);
     setAiInsight(insight);
@@ -83,7 +66,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ item, isLast, onActi
   };
 
   return (
-    <div 
+    <div
       id={`item-${item.id}`}
       className="relative pl-4 md:pl-8 pb-10 md:pb-12 group scroll-mt-24 md:scroll-mt-32 transition-all duration-300"
       onMouseEnter={() => onActive?.(item.id)}
@@ -93,38 +76,37 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ item, isLast, onActi
       {!isLast && (
         <div className="absolute left-[9px] md:left-[15px] top-6 bottom-0 w-[2px] bg-gradient-to-b from-primary-200 to-transparent group-hover:from-primary-400 transition-colors duration-500"></div>
       )}
-      
+
       {/* Timeline Node */}
       <div className="absolute left-0 top-6 w-5 h-5 md:w-8 md:h-8 rounded-full bg-surface-50 border-2 border-primary-200 shadow-sm z-10 flex items-center justify-center transition-all duration-300 group-hover:border-primary-500 group-hover:scale-110 group-hover:bg-primary-50">
         <div className="w-1.5 h-1.5 md:w-2.5 md:h-2.5 bg-primary-500 rounded-full"></div>
       </div>
 
       {/* Main Card */}
-      <div 
+      <div
         onClick={handleOpenMaps}
         className="relative bg-white rounded-xl md:rounded-2xl shadow-sm hover:shadow-card border border-gray-100 p-4 md:p-6 transition-all duration-300 transform md:hover:-translate-y-1 cursor-pointer group/card active:scale-[0.99]"
       >
         {/* Header: Time & Title */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3">
           <div className="flex items-start md:items-center gap-2 md:gap-3 flex-col md:flex-row">
-             <div className="flex items-center gap-1.5 text-primary-600 font-bold bg-primary-50 px-2 py-1 md:px-2.5 md:py-1 rounded-md text-xs md:text-sm whitespace-nowrap">
-                <Clock size={12} className="md:w-[14px] md:h-[14px]" />
-                {item.time}
-             </div>
-             <h3 className="text-lg md:text-2xl font-black text-gray-800 leading-tight">
-                {item.title}
-             </h3>
+            <div className="flex items-center gap-1.5 text-primary-600 font-bold bg-primary-50 px-2 py-1 md:px-2.5 md:py-1 rounded-md text-xs md:text-sm whitespace-nowrap">
+              <Clock size={12} className="md:w-[14px] md:h-[14px]" />
+              {item.time}
+            </div>
+            <h3 className="text-lg md:text-2xl font-black text-gray-800 leading-tight">
+              {item.title}
+            </h3>
           </div>
-          
+
           {/* Action Buttons */}
           <div className="flex items-center gap-2 mt-2 md:mt-0">
             <button
               onClick={handleAiInsight}
-              className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] md:text-xs font-bold border transition-all ${
-                aiInsight 
-                  ? 'bg-purple-100 text-purple-700 border-purple-200' 
+              className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] md:text-xs font-bold border transition-all ${aiInsight
+                  ? 'bg-purple-100 text-purple-700 border-purple-200'
                   : 'bg-white text-purple-600 border-purple-100 hover:bg-purple-50'
-              }`}
+                }`}
               title="AI 隱藏密技"
             >
               {aiLoading ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
@@ -139,7 +121,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ item, isLast, onActi
               <span className="hidden md:inline">行事曆</span>
             </button>
             <div className="hidden md:flex opacity-0 group-hover/card:opacity-100 transition-opacity text-primary-400 text-xs items-center gap-1 ml-2">
-               Open Map <ArrowRight size={12} />
+              Open Map <ArrowRight size={12} />
             </div>
           </div>
         </div>
@@ -147,85 +129,85 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ item, isLast, onActi
         {/* AI Insight Content */}
         {aiInsight && (
           <div className="mb-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-100 rounded-lg p-3 animate-in fade-in slide-in-from-top-2 relative">
-             <button 
-               onClick={(e) => { e.stopPropagation(); setAiInsight(null); }}
-               className="absolute top-2 right-2 text-purple-300 hover:text-purple-500"
-             >
-               <X size={14} />
-             </button>
-             <div className="flex gap-2 items-start">
-               <Sparkles size={16} className="text-purple-500 mt-0.5 flex-shrink-0" />
-               <p className="text-sm text-purple-800 leading-relaxed font-medium">
-                 {aiInsight}
-               </p>
-             </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); setAiInsight(null); }}
+              className="absolute top-2 right-2 text-purple-300 hover:text-purple-500"
+            >
+              <X size={14} />
+            </button>
+            <div className="flex gap-2 items-start">
+              <Sparkles size={16} className="text-purple-500 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-purple-800 leading-relaxed font-medium">
+                {aiInsight}
+              </p>
+            </div>
           </div>
         )}
 
         {/* Description & Transport */}
         <div className="mb-4 md:mb-5 pl-1">
-           <p className="text-gray-600 text-sm md:text-base font-medium mb-3 border-l-2 border-accent-red pl-3 py-0.5 leading-relaxed">
-             {item.description}
-           </p>
+          <p className="text-gray-600 text-sm md:text-base font-medium mb-3 border-l-2 border-accent-red pl-3 py-0.5 leading-relaxed">
+            {item.description}
+          </p>
 
-           <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-100 text-xs font-semibold text-gray-500">
-              <TransportIcon type={item.transportType} />
-              {item.transportDetail}
-           </div>
+          <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-100 text-xs font-semibold text-gray-500">
+            <TransportIcon type={item.transportType} />
+            {item.transportDetail}
+          </div>
         </div>
 
         {/* Info Grid (Food/Nearby/Shopping) */}
         <div className="space-y-4 border-t border-dashed border-gray-100 pt-4">
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-             {/* Food */}
-             {item.recommendedFood.length > 0 && (
-                <div className="space-y-2">
-                   <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
-                      <Utensils size={12} /> 美食推薦
-                   </div>
-                   <div className="flex flex-wrap gap-2">
-                      {item.recommendedFood.map((food, i) => (
-                         <span key={i} className="text-xs text-gray-700 bg-orange-50/80 px-2 py-1 rounded border border-orange-100/50">
-                            {food}
-                         </span>
-                      ))}
-                   </div>
-                </div>
-             )}
 
-             {/* Nearby */}
-             {item.nearbySpots.length > 0 && (
-                <div className="space-y-2">
-                   <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
-                      <MapPinned size={12} /> 順遊景點
-                   </div>
-                   <div className="flex flex-wrap gap-2">
-                      {item.nearbySpots.map((spot, i) => (
-                         <span key={i} className="text-xs text-gray-700 bg-indigo-50/80 px-2 py-1 rounded border border-indigo-100/50">
-                            {spot}
-                         </span>
-                      ))}
-                   </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Food */}
+            {item.recommendedFood.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <Utensils size={12} /> 美食推薦
                 </div>
-             )}
+                <div className="flex flex-wrap gap-2">
+                  {item.recommendedFood.map((food, i) => (
+                    <span key={i} className="text-xs text-gray-700 bg-orange-50/80 px-2 py-1 rounded border border-orange-100/50">
+                      {food}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Nearby */}
+            {item.nearbySpots.length > 0 && (
+              <div className="space-y-2">
+                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <MapPinned size={12} /> 順遊景點
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {item.nearbySpots.map((spot, i) => (
+                    <span key={i} className="text-xs text-gray-700 bg-indigo-50/80 px-2 py-1 rounded border border-indigo-100/50">
+                      {spot}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Shopping Quest */}
           {item.shoppingSideQuests && item.shoppingSideQuests.length > 0 && (
             <div className="bg-gradient-to-r from-rose-50/50 to-transparent p-3 rounded-lg border border-rose-100/50">
               <div className="text-[10px] font-bold text-accent-red uppercase tracking-widest flex items-center gap-1.5 mb-2">
-                <ShoppingBag size={12} className="fill-current" /> 
+                <ShoppingBag size={12} className="fill-current" />
                 必買支線
               </div>
               <div className="flex flex-col gap-2">
-                 {item.shoppingSideQuests.map((shop, i) => (
-                    <div key={i} className="flex flex-wrap md:flex-nowrap items-baseline gap-1 md:gap-2 text-xs leading-relaxed">
-                       <span className="font-bold text-rose-700 whitespace-nowrap">{shop.name}</span>
-                       <span className="text-rose-400 hidden md:inline">•</span>
-                       <span className="text-gray-600 block md:inline w-full md:w-auto pl-2 md:pl-0 border-l-2 md:border-l-0 border-rose-200 md:border-none">{shop.description}</span>
-                    </div>
-                 ))}
+                {item.shoppingSideQuests.map((shop, i) => (
+                  <div key={i} className="flex flex-wrap md:flex-nowrap items-baseline gap-1 md:gap-2 text-xs leading-relaxed">
+                    <span className="font-bold text-rose-700 whitespace-nowrap">{shop.name}</span>
+                    <span className="text-rose-400 hidden md:inline">•</span>
+                    <span className="text-gray-600 block md:inline w-full md:w-auto pl-2 md:pl-0 border-l-2 md:border-l-0 border-rose-200 md:border-none">{shop.description}</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -233,17 +215,17 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ item, isLast, onActi
 
         {/* Footer: Address */}
         <div className="mt-4 md:mt-5 pt-3 md:pt-4 border-t border-gray-100 flex items-center justify-between group/addr">
-           <div className="flex items-center gap-2 text-xs text-gray-400 overflow-hidden pr-2">
-              <MapPin size={12} className="flex-shrink-0" />
-              <span className="truncate font-mono group-hover/addr:text-primary-600 transition-colors">{item.address_jp}</span>
-           </div>
-           <button 
-              onClick={handleCopy}
-              className={`p-2 md:p-1.5 rounded-md transition-all flex-shrink-0 ${copied ? 'bg-green-100 text-green-700' : 'bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600'}`}
-              title="複製地址"
-            >
-              {copied ? <CheckCheck size={16} /> : <Copy size={16} />}
-           </button>
+          <div className="flex items-center gap-2 text-xs text-gray-400 overflow-hidden pr-2">
+            <MapPin size={12} className="flex-shrink-0" />
+            <span className="truncate font-mono group-hover/addr:text-primary-600 transition-colors">{item.address_jp}</span>
+          </div>
+          <button
+            onClick={handleCopy}
+            className={`p-2 md:p-1.5 rounded-md transition-all flex-shrink-0 ${copied ? 'bg-green-100 text-green-700' : 'bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600'}`}
+            title="複製地址"
+          >
+            {copied ? <CheckCheck size={16} /> : <Copy size={16} />}
+          </button>
         </div>
 
       </div>

@@ -2,15 +2,19 @@ import { ItineraryItem } from '../types';
 
 export const downloadICS = (item: ItineraryItem, dateStr: string) => {
   // Parse date string (e.g., "2/27 (五)") to get year/month/day
-  // Assuming current year or next occurrence for simplicity in this demo context
-  // Fixed year 2025 based on the app header
-  const year = 2025;
+  // Dynamically determine year based on current date
   const dateMatch = dateStr.match(/(\d{1,2})\/(\d{1,2})/);
   
   if (!dateMatch) return;
   
   const month = parseInt(dateMatch[1], 10);
   const day = parseInt(dateMatch[2], 10);
+  
+  // Determine year: if the date has passed this year, assume next year
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const tentativeDate = new Date(currentYear, month - 1, day);
+  const year = tentativeDate < now ? currentYear + 1 : currentYear;
   
   // Parse time (e.g., "07:30")
   const [hours, minutes] = item.time.split(':').map(Number);
