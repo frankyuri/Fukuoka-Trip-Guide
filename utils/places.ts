@@ -108,7 +108,9 @@ export const searchNearbyRestaurants = async (
             userRatingsTotal: place.user_ratings_total,
             priceLevel: place.price_level,
             address: place.vicinity || '',
-            isOpen: place.opening_hours?.isOpen?.() ?? place.opening_hours?.open_now,
+            isOpen: place.opening_hours 
+              ? (typeof place.opening_hours.isOpen === 'function' ? place.opening_hours.isOpen() : place.opening_hours.open_now) 
+              : undefined,
             distance: calculateDistance(
               lat, lng, 
               place.geometry.location.lat(), 
