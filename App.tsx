@@ -42,6 +42,7 @@ const App: React.FC = () => {
 
   const [activeDayIndex, setActiveDayIndex] = useState(getInitialDayIndex);
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
+  const [highlightedLocation, setHighlightedLocation] = useState<{ lat: number, lng: number } | null>(null);
 
   // Mobile View State: 'list' or 'map'. Default to 'list' on mobile.
   // On Desktop, this state is ignored as we show both.
@@ -158,6 +159,7 @@ const App: React.FC = () => {
                   item={item}
                   isLast={index === activeDay.items.length - 1}
                   onActive={setActiveItemId}
+                  onRestaurantHover={setHighlightedLocation}
                 />
               ))}
             </div>
@@ -166,32 +168,40 @@ const App: React.FC = () => {
 
           {/* Right: Map (Visible on Desktop OR when Mobile View is 'map') */}
           <div className={`order-1 lg:order-2 lg:w-2/5 ${mobileViewMode === 'list' ? 'hidden lg:block' : 'block'}`}>
-            {/* 
-              Map Container Height Logic:
-              - Mobile Map Mode: calc(100vh - headerOffset) to fill screen
-              - Desktop Sticky: calc(100vh - 60px)
-            */}
+
+            {/* Desktop Layout: Sticky Sidebar with Map + Widget */}
             <div className={`
-              transition-all duration-300
-              ${mobileViewMode === 'map' ? 'h-[75vh] w-full rounded-3xl shadow-2xl' : 'h-[350px] lg:sticky lg:top-8 lg:h-[calc(100vh-60px)]'}
+              flex flex-col gap-4
+              ${mobileViewMode === 'map'
+                ? 'h-[85vh] w-full'
+                : 'lg:sticky lg:top-8 lg:h-[calc(100vh-60px)]'}
             `}>
-              <Suspense fallback={<MapLoadingFallback />}>
-                <DayMap items={activeDay.items} activeItemId={activeItemId} />
-              </Suspense>
-            </div>
 
-            {/* Mobile-only Hint under map when in map mode */}
-            {mobileViewMode === 'map' && (
-              <p className="text-center text-xs text-slate-400 mt-4 lg:hidden">
-                點擊地標查看詳情，或切換回列表模式瀏覽行程
-              </p>
-            )}
+              {/* Map Container - Grows to fill space */}
+              <div className="flex-grow w-full rounded-3xl shadow-float overflow-hidden relative min-h-[300px]">
+                <Suspense fallback={<MapLoadingFallback />}>
+                  <DayMap
+                    items={activeDay.items}
+                    activeItemId={activeItemId}
+                    highlightedLocation={highlightedLocation}
+                  />
+                </Suspense>
+              </div>
 
-            {/* Currency Widget - Desktop Only */}
-            <div className="hidden lg:block mt-6">
-              <Suspense fallback={<WidgetLoadingFallback />}>
-                <CurrencyWidget />
-              </Suspense>
+              {/* Mobile-only Hint */}
+              {mobileViewMode === 'map' && (
+                <p className="text-center text-xs text-slate-400 lg:hidden">
+                  點擊地標查看詳情，或切換回列表模式瀏覽行程
+                </p>
+              )}
+
+              {/* Currency Widget - Desktop Only (Fixed at bottom of sticky container) */}
+              <div className="hidden lg:block flex-shrink-0">
+                <Suspense fallback={<WidgetLoadingFallback />}>
+                  <CurrencyWidget />
+                </Suspense>
+              </div>
+
             </div>
           </div>
 

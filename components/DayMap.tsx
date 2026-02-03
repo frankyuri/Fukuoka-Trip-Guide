@@ -7,6 +7,7 @@ import { TransportIcon, getTransportLabel } from './TransportIcon';
 interface DayMapProps {
   items: ItineraryItem[];
   activeItemId?: string | null;
+  highlightedLocation?: { lat: number, lng: number } | null;
 }
 
 // Map Tile Layer Configurations
@@ -28,10 +29,11 @@ const TILE_LAYERS = {
 // Wrapper to render TransportIcon as JSX element for filter menu
 const renderTransportIcon = (type: TransportType) => <TransportIcon type={type} size={16} />;
 
-export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId }) => {
+export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlightedLocation }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
+  const highlightMarkerRef = useRef<L.CircleMarker | null>(null);
 
   const [activeFilter, setActiveFilter] = useState<TransportType | 'ALL'>('ALL');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -158,6 +160,36 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId }) => {
     map.invalidateSize();
 
   }, [items, activeFilter]);
+
+  // Handle Highlighted Location (e.g. from nearby restaurants)
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    // Remove existing highlight marker
+    if (highlightMarkerRef.current) {
+      highlightMarkerRef.current.remove();
+      highlightMarkerRef.current = null;
+    }
+
+    if (highlightedLocation) {
+      // Fly to location with high zoom
+      map.flyTo([highlightedLocation.lat, highlightedLocation.lng], 17, {
+        duration: 1.0,
+        easeLinearity: 0.25
+      });
+
+      // Add a temporary highlight marker
+      highlightMarkerRef.current = L.circleMarker([highlightedLocation.lat, highlightedLocation.lng], {
+        radius: 8,
+        fillColor: '#F97316', // Orange-500
+        color: '#fff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.8
+      }).addTo(map);
+    }
+  }, [highlightedLocation]);
 
   // Handle External Highlight (Hover from Timeline)
   useEffect(() => {

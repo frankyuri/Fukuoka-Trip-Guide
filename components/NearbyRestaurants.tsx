@@ -8,6 +8,7 @@ interface NearbyRestaurantsProps {
     locationName: string;
     isExpanded: boolean;
     onToggle: () => void;
+    onHover?: (location: { lat: number, lng: number } | null) => void;
 }
 
 export const NearbyRestaurants: React.FC<NearbyRestaurantsProps> = ({
@@ -15,7 +16,8 @@ export const NearbyRestaurants: React.FC<NearbyRestaurantsProps> = ({
     lng,
     locationName,
     isExpanded,
-    onToggle
+    onToggle,
+    onHover
 }) => {
     const [restaurants, setRestaurants] = useState<NearbyRestaurant[]>([]);
     const [loading, setLoading] = useState(false);
@@ -87,6 +89,16 @@ export const NearbyRestaurants: React.FC<NearbyRestaurantsProps> = ({
                         <div
                             key={restaurant.placeId}
                             onClick={(e) => { e.stopPropagation(); handleOpenMaps(restaurant); }}
+                            onMouseEnter={() => {
+                                if (onHover && restaurant.location) {
+                                    onHover(restaurant.location);
+                                }
+                            }}
+                            onMouseLeave={() => {
+                                if (onHover) {
+                                    onHover(null);
+                                }
+                            }}
                             className="p-3 bg-white rounded-lg border border-gray-100 hover:border-orange-200 hover:shadow-sm transition-all cursor-pointer group"
                         >
                             <div className="flex items-start justify-between gap-2">
@@ -97,8 +109,8 @@ export const NearbyRestaurants: React.FC<NearbyRestaurantsProps> = ({
                                         </h4>
                                         {restaurant.isOpen !== undefined && (
                                             <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${restaurant.isOpen
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : 'bg-gray-100 text-gray-500'
+                                                ? 'bg-green-100 text-green-700'
+                                                : 'bg-gray-100 text-gray-500'
                                                 }`}>
                                                 {restaurant.isOpen ? '營業中' : '休息中'}
                                             </span>

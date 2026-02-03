@@ -12,6 +12,7 @@ export interface NearbyRestaurant {
   distance?: number;
   photoUrl?: string;
   types: string[];
+  location?: { lat: number, lng: number };
 }
 
 // Calculate distance between two coordinates in meters
@@ -117,7 +118,11 @@ export const searchNearbyRestaurants = async (
               place.geometry.location.lng()
             ),
             photoUrl: place.photos?.[0]?.getUrl({ maxWidth: 200 }),
-            types: place.types || []
+            types: place.types || [],
+            location: {
+              lat: place.geometry.location.lat(),
+              lng: place.geometry.location.lng()
+            }
           }));
 
           // Sort by distance

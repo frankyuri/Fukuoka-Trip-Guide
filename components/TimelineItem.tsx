@@ -24,9 +24,10 @@ interface TimelineItemProps {
   item: ItineraryItem;
   isLast: boolean;
   onActive?: (id: string | null) => void;
+  onRestaurantHover?: (location: { lat: number, lng: number } | null) => void;
 }
 
-export const TimelineItem: React.FC<TimelineItemProps> = ({ item, isLast, onActive }) => {
+export const TimelineItem: React.FC<TimelineItemProps> = ({ item, isLast, onActive, onRestaurantHover }) => {
   const [copied, setCopied] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiInsight, setAiInsight] = useState<string | null>(null);
@@ -221,6 +222,7 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ item, isLast, onActi
             locationName={item.title}
             isExpanded={showNearbyRestaurants}
             onToggle={() => setShowNearbyRestaurants(!showNearbyRestaurants)}
+            onHover={onRestaurantHover}
           />
         </div>
 
