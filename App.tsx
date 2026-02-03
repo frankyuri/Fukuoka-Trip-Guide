@@ -4,15 +4,37 @@ import { TimelineItem } from './components/TimelineItem';
 import { DayMap } from './components/DayMap';
 import { Footer } from './components/Footer';
 import { WeatherWidget } from './components/WeatherWidget';
+import { CurrencyWidget } from './components/CurrencyWidget';
+import { ShareButton } from './components/ShareButton';
 import { Plane, Map as MapIcon, List } from 'lucide-react';
 
 const App: React.FC = () => {
-  const [activeDayIndex, setActiveDayIndex] = useState(0);
+  // Read initial day from URL for share link support
+  const getInitialDayIndex = () => {
+    const params = new URLSearchParams(window.location.search);
+    const dayParam = params.get('day');
+    if (dayParam) {
+      const index = parseInt(dayParam, 10);
+      if (!isNaN(index) && index >= 0 && index < ITINERARY_DATA.length) {
+        return index;
+      }
+    }
+    return 0;
+  };
+
+  const [activeDayIndex, setActiveDayIndex] = useState(getInitialDayIndex);
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
-  
+
   // Mobile View State: 'list' or 'map'. Default to 'list' on mobile.
   // On Desktop, this state is ignored as we show both.
   const [mobileViewMode, setMobileViewMode] = useState<'list' | 'map'>('list');
+
+  // Update URL when day changes (for shareable links)
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('day', activeDayIndex.toString());
+    window.history.replaceState({}, '', url.toString());
+  }, [activeDayIndex]);
 
   useEffect(() => {
     // Scroll to top when day changes
@@ -25,20 +47,20 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen font-sans bg-surface-50 text-slate-800 pb-20 md:pb-12">
-      
+
       {/* Immersive Hero Header */}
       <header className="relative bg-primary-900 text-white overflow-hidden pb-8 md:pb-12 rounded-b-[32px] md:rounded-b-[40px] shadow-2xl z-20">
         {/* Abstract Background Shapes */}
         <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
-           <div className="absolute top-[-20%] left-[-10%] w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-primary-500 rounded-full blur-[80px] md:blur-[100px]"></div>
-           <div className="absolute bottom-[-20%] right-[-10%] w-[250px] h-[250px] md:w-[400px] md:h-[400px] bg-accent-red rounded-full blur-[80px] md:blur-[100px]"></div>
+          <div className="absolute top-[-20%] left-[-10%] w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-primary-500 rounded-full blur-[80px] md:blur-[100px]"></div>
+          <div className="absolute bottom-[-20%] right-[-10%] w-[250px] h-[250px] md:w-[400px] md:h-[400px] bg-accent-red rounded-full blur-[80px] md:blur-[100px]"></div>
         </div>
 
         <div className="relative z-10 max-w-4xl mx-auto px-6 pt-12 md:pt-20 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 md:px-4 md:py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[10px] md:text-xs font-bold tracking-widest uppercase mb-4 md:mb-6 shadow-glow">
             <Plane size={12} /> 2025 Fukuoka Trip
           </div>
-          
+
           <h1 className="text-3xl md:text-6xl font-black mb-3 md:mb-4 leading-tight tracking-tight">
             福岡<span className="text-primary-300">充實</span>之旅
           </h1>
@@ -56,11 +78,10 @@ const App: React.FC = () => {
                 <button
                   key={day.dayTitle}
                   onClick={() => setActiveDayIndex(index)}
-                  className={`snap-center flex-shrink-0 group relative flex flex-col items-start justify-center p-3 md:p-4 min-w-[100px] md:min-w-[120px] rounded-2xl border transition-all duration-300 ${
-                    isActive
-                      ? 'bg-white text-primary-900 shadow-xl scale-105 border-white'
-                      : 'bg-white/10 text-white border-white/10 hover:bg-white/20'
-                  }`}
+                  className={`snap-center flex-shrink-0 group relative flex flex-col items-start justify-center p-3 md:p-4 min-w-[100px] md:min-w-[120px] rounded-2xl border transition-all duration-300 ${isActive
+                    ? 'bg-white text-primary-900 shadow-xl scale-105 border-white'
+                    : 'bg-white/10 text-white border-white/10 hover:bg-white/20'
+                    }`}
                 >
                   <span className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${isActive ? 'text-primary-500' : 'text-primary-200'}`}>
                     {day.date}
@@ -81,7 +102,7 @@ const App: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 mt-6 md:mt-12">
-        
+
         {/* Day Context Title & Weather */}
         <div className="mb-6 md:mb-8 flex flex-col items-center justify-center relative gap-4 md:gap-6">
           <div className="text-center px-2">
@@ -94,8 +115,12 @@ const App: React.FC = () => {
               {activeDay.focus}
             </p>
           </div>
-          
-          <WeatherWidget date={activeDay.date} />
+
+          {/* Weather & Share */}
+          <div className="flex items-center gap-3 flex-wrap justify-center">
+            <WeatherWidget date={activeDay.date} />
+            <ShareButton dayIndex={activeDayIndex} dayTitle={activeDay.dayTitle} />
+          </div>
         </div>
 
         {/* 
@@ -104,20 +129,20 @@ const App: React.FC = () => {
           - Desktop: Always split view (flex-row)
         */}
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 relative">
-          
+
           {/* Left: Timeline (Visible on Desktop OR when Mobile View is 'list') */}
           <div className={`order-2 lg:order-1 lg:w-3/5 ${mobileViewMode === 'map' ? 'hidden lg:block' : 'block'}`}>
-             <div className="relative md:px-4">
-                {activeDay.items.map((item, index) => (
-                  <TimelineItem 
-                     key={item.id} 
-                     item={item} 
-                     isLast={index === activeDay.items.length - 1} 
-                     onActive={setActiveItemId}
-                   />
-                ))}
-             </div>
-             <Footer />
+            <div className="relative md:px-4">
+              {activeDay.items.map((item, index) => (
+                <TimelineItem
+                  key={item.id}
+                  item={item}
+                  isLast={index === activeDay.items.length - 1}
+                  onActive={setActiveItemId}
+                />
+              ))}
+            </div>
+            <Footer />
           </div>
 
           {/* Right: Map (Visible on Desktop OR when Mobile View is 'map') */}
@@ -133,13 +158,18 @@ const App: React.FC = () => {
             `}>
               <DayMap items={activeDay.items} activeItemId={activeItemId} />
             </div>
-            
+
             {/* Mobile-only Hint under map when in map mode */}
             {mobileViewMode === 'map' && (
               <p className="text-center text-xs text-slate-400 mt-4 lg:hidden">
                 點擊地標查看詳情，或切換回列表模式瀏覽行程
               </p>
             )}
+
+            {/* Currency Widget - Desktop Only */}
+            <div className="hidden lg:block mt-6">
+              <CurrencyWidget />
+            </div>
           </div>
 
         </div>
