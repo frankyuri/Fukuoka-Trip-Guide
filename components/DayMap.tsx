@@ -102,8 +102,15 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId }) => {
         return;
       }
 
-      hasVisibleMarkers = true;
       const { lat, lng } = item.coordinates;
+
+      // Skip items with invalid coordinates
+      if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) {
+        console.warn(`Invalid coordinates for item: ${item.title}`, item.coordinates);
+        return;
+      }
+
+      hasVisibleMarkers = true;
       const marker = L.marker([lat, lng], { icon: createCustomIcon(index) })
         .addTo(map)
         .bindPopup(`
@@ -142,8 +149,8 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId }) => {
       bounds.extend([lat, lng]);
     });
 
-    // Fit bounds to visible markers
-    if (hasVisibleMarkers) {
+    // Fit bounds to visible markers (only if bounds are valid)
+    if (hasVisibleMarkers && bounds.isValid()) {
       map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5 });
     }
 
