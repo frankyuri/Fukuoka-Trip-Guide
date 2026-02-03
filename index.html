@@ -20,9 +20,15 @@
         window.googleMapsLoaded = true;
         window.dispatchEvent(new Event('google-maps-loaded'));
       };
+      window.gm_authFailure = function() {
+        console.warn('Google Maps API authentication failed');
+        window.googleMapsError = true;
+        window.dispatchEvent(new Event('google-maps-error'));
+      };
     </script>
     <script async defer
-      src="https://maps.googleapis.com/maps/api/js?key=GOOGLE_PLACES_API_KEY_PLACEHOLDER&libraries=places&callback=initGoogleMaps">
+      src="https://maps.googleapis.com/maps/api/js?key=GOOGLE_PLACES_API_KEY_PLACEHOLDER&libraries=places&callback=initGoogleMaps"
+      onerror="window.googleMapsError=true; console.warn('Google Maps script failed to load');">
     </script>
     
     <script src="https://cdn.tailwindcss.com"></script>
