@@ -67,22 +67,23 @@ const App: React.FC = () => {
     <div className="min-h-screen font-sans bg-surface-50 text-slate-800 pb-20 md:pb-12">
 
       {/* Immersive Hero Header */}
-      <header className="relative bg-primary-900 text-white overflow-hidden pb-8 md:pb-12 rounded-b-[32px] md:rounded-b-[40px] shadow-2xl z-20">
+      <header className="relative bg-gradient-to-br from-primary-800 via-primary-900 to-sakura-500/30 text-white overflow-hidden pb-8 md:pb-12 rounded-b-[32px] md:rounded-b-[40px] shadow-2xl z-20">
         {/* Abstract Background Shapes */}
-        <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none">
-          <div className="absolute top-[-20%] left-[-10%] w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-primary-500 rounded-full blur-[80px] md:blur-[100px]"></div>
-          <div className="absolute bottom-[-20%] right-[-10%] w-[250px] h-[250px] md:w-[400px] md:h-[400px] bg-accent-red rounded-full blur-[80px] md:blur-[100px]"></div>
+        <div className="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none">
+          <div className="absolute top-[-20%] left-[-10%] w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-sakura-400 rounded-full blur-[80px] md:blur-[100px] animate-pulse-slow"></div>
+          <div className="absolute bottom-[-20%] right-[-10%] w-[250px] h-[250px] md:w-[400px] md:h-[400px] bg-sunset-coral rounded-full blur-[80px] md:blur-[100px] animate-pulse-slow"></div>
+          <div className="absolute top-[30%] right-[20%] w-[100px] h-[100px] md:w-[200px] md:h-[200px] bg-primary-400 rounded-full blur-[60px] md:blur-[80px]"></div>
         </div>
 
         <div className="relative z-10 max-w-4xl mx-auto px-6 pt-12 md:pt-20 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 md:px-4 md:py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[10px] md:text-xs font-bold tracking-widest uppercase mb-4 md:mb-6 shadow-glow">
-            <Plane size={12} /> 2025 Fukuoka Trip
+          <div className="inline-flex items-center gap-2 px-3 py-1 md:px-4 md:py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/30 text-[10px] md:text-xs font-bold tracking-widest uppercase mb-4 md:mb-6 shadow-glow-pink">
+            <Plane size={12} className="text-sakura-300" /> 2025 Fukuoka Trip
           </div>
 
           <h1 className="text-3xl md:text-6xl font-black mb-3 md:mb-4 leading-tight tracking-tight">
-            福岡<span className="text-primary-300">充實</span>之旅
+            福岡<span className="bg-gradient-to-r from-sakura-300 to-sunset-gold bg-clip-text text-transparent">充實</span>之旅
           </h1>
-          <p className="text-primary-100 max-w-lg mx-auto text-xs md:text-lg font-light opacity-90 mb-6 md:mb-8 px-4 leading-relaxed">
+          <p className="text-white/80 max-w-lg mx-auto text-xs md:text-lg font-light mb-6 md:mb-8 px-4 leading-relaxed">
             從博多地標到門司港懷舊，為您量身打造的 4 天 3 夜完美行程。
           </p>
         </div>
@@ -97,19 +98,19 @@ const App: React.FC = () => {
                   key={day.dayTitle}
                   onClick={() => setActiveDayIndex(index)}
                   className={`snap-center flex-shrink-0 group relative flex flex-col items-start justify-center p-3 md:p-4 min-w-[100px] md:min-w-[120px] rounded-2xl border transition-all duration-300 ${isActive
-                    ? 'bg-white text-primary-900 shadow-xl scale-105 border-white'
-                    : 'bg-white/10 text-white border-white/10 hover:bg-white/20'
+                    ? 'bg-white text-primary-900 shadow-float scale-105 border-sakura-200'
+                    : 'bg-white/10 text-white border-white/10 hover:bg-white/20 hover:border-white/30'
                     }`}
                 >
-                  <span className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${isActive ? 'text-primary-500' : 'text-primary-200'}`}>
+                  <span className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${isActive ? 'text-sakura-500' : 'text-sakura-200'}`}>
                     {day.date}
                   </span>
-                  <span className={`text-lg md:text-xl font-bold ${isActive ? 'text-primary-900' : 'text-white'}`}>
+                  <span className={`text-lg md:text-xl font-bold ${isActive ? 'text-primary-800' : 'text-white'}`}>
                     {day.dayTitle}
                   </span>
                   {/* Active Indicator Dot */}
                   {isActive && (
-                    <div className="absolute top-3 right-3 w-1.5 h-1.5 bg-accent-red rounded-full animate-pulse"></div>
+                    <div className="absolute top-3 right-3 w-2 h-2 bg-gradient-to-r from-sakura-400 to-sunset-coral rounded-full animate-pulse shadow-glow-pink"></div>
                   )}
                 </button>
               );
