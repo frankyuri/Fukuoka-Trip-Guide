@@ -37,9 +37,6 @@ export const Footer: React.FC = () => {
 
           <div className="mt-8 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-primary-300">
             <span>2/27 (五) - 3/2 (一) 福岡之旅</span>
-            <span className="flex items-center gap-1">
-              Made with <Heart size={10} className="text-accent-red fill-current" /> for your trip
-            </span>
           </div>
         </div>
       </div>
