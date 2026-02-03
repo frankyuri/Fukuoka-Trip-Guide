@@ -128,68 +128,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ date }) => {
       });
     }
     setLoading(false);
-  };
-
-  useEffect(() => {
-    const fetchWeather = async () => {
-      setLoading(true);
-      setError(false);
-      try {
-        const response = await fetch(
-          'https://api.open-meteo.com/v1/forecast?latitude=33.5902&longitude=130.4017&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo'
-        );
-
-        if (!response.ok) throw new Error('API Error');
-
-        const data = await response.json();
-
-        const dateMatch = date.match(/(\d{1,2})\/(\d{1,2})/);
-        let targetIndex = -1;
-
-        if (dateMatch) {
-          const month = dateMatch[1].padStart(2, '0');
-          const day = dateMatch[2].padStart(2, '0');
-          const targetDateString = `-${month}-${day}`;
-          targetIndex = data.daily.time.findIndex((t: string) => t.endsWith(targetDateString));
-        }
-
-        if (targetIndex !== -1) {
-          const code = data.daily.weather_code[targetIndex];
-          setWeather({
-            tempHigh: Math.round(data.daily.temperature_2m_max[targetIndex]),
-            tempLow: Math.round(data.daily.temperature_2m_min[targetIndex]),
-            condition: getWeatherConditionText(code),
-            icon: getWeatherIcon(code),
-            precip: data.daily.precipitation_probability_max[targetIndex],
-            isForecastMatch: true
-          });
-        } else {
-          const currentCode = data.current.weather_code;
-          const todayMax = data.daily.temperature_2m_max[0];
-          const todayMin = data.daily.temperature_2m_min[0];
-
-          setWeather({
-            tempHigh: Math.round(todayMax),
-            tempLow: Math.round(todayMin),
-            currentTemp: Math.round(data.current.temperature_2m),
-            condition: getWeatherConditionText(currentCode),
-            icon: getWeatherIcon(currentCode),
-            precip: data.daily.precipitation_probability_max[0],
-            isForecastMatch: false
-          });
-        }
-
-      } catch (err) {
-        console.error("Weather fetch error:", err);
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchWeather();
-  }, [date]);
-
+  }
   if (loading) {
     return (
       <div className="inline-flex bg-white/60 backdrop-blur-md border border-white/60 rounded-2xl p-2 md:p-3 pr-4 md:pr-5 shadow-sm items-center gap-3 h-[60px] md:h-[72px] justify-center w-full max-w-[200px]">
