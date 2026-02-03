@@ -163,6 +163,14 @@ const App: React.FC = () => {
                 />
               ))}
             </div>
+
+            {/* Currency Widget - At bottom of timeline */}
+            <div className="mt-8 px-4">
+              <Suspense fallback={<WidgetLoadingFallback />}>
+                <CurrencyWidget />
+              </Suspense>
+            </div>
+
             <Footer />
           </div>
 
@@ -195,12 +203,7 @@ const App: React.FC = () => {
                 </p>
               )}
 
-              {/* Currency Widget - Desktop Only (Fixed at bottom of sticky container) */}
-              <div className="hidden lg:block flex-shrink-0">
-                <Suspense fallback={<WidgetLoadingFallback />}>
-                  <CurrencyWidget />
-                </Suspense>
-              </div>
+
 
             </div>
           </div>
