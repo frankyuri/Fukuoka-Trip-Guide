@@ -1,0 +1,147 @@
+{
+    "date": "2/28 (六)",
+    "dayTitle": "Day 2",
+    "theme": "跨海吃壽司 & 懷舊港口",
+    "focus": "【週末限定】唐戶市場壽司馬拉松 + 門司港散策",
+    "items": [
+        {
+            "id": "d2-1",
+            "time": "08:30",
+            "title": "移動：博多 → 門司港",
+            "description": "鐵道旅行與沿途風景",
+            "address_jp": "福岡県北九州市門司区西海岸1-5-31",
+            "address_en": "Mojiko Station",
+            "coordinates": {
+                "lat": 33.9442,
+                "lng": 130.9613
+            },
+            "transportType": "TRAIN",
+            "transportDetail": "特急 Sonic / 新幹線 至小倉轉車",
+            "googleMapsQuery": "門司港駅",
+            "recommendedFood": [
+                "博多站鐵路便當 (Ekiben)",
+                "特急列車上的咖啡"
+            ],
+            "nearbySpots": [
+                "小倉站 (轉車點)",
+                "門司港車站"
+            ]
+        },
+        {
+            "id": "d2-2",
+            "time": "10:30",
+            "title": "唐戶市場 (山口縣)",
+            "description": "週末限定！滿滿的握壽司與河豚",
+            "address_jp": "山口県下関市唐戸町 5-50",
+            "address_en": "Karato Market",
+            "coordinates": {
+                "lat": 33.9578,
+                "lng": 130.9427
+            },
+            "transportType": "SHIP",
+            "transportDetail": "門司港搭關門聯絡船 (5分)",
+            "googleMapsQuery": "唐戸市場",
+            "recommendedFood": [
+                "河豚生魚片 (必吃)",
+                "大托盤握壽司",
+                "炸河豚"
+            ],
+            "nearbySpots": [
+                "赤間神宮",
+                "日清講和紀念館",
+                "龜山八幡宮"
+            ]
+        },
+        {
+            "id": "d2-3",
+            "time": "12:30",
+            "title": "門司港懷舊區",
+            "description": "大正浪漫風格的紅磚洋房",
+            "address_jp": "北九州市門司区港町",
+            "address_en": "Mojiko Retro",
+            "coordinates": {
+                "lat": 33.9463,
+                "lng": 130.9608
+            },
+            "transportType": "SHIP",
+            "transportDetail": "搭船返回門司港側",
+            "googleMapsQuery": "門司港レトロ",
+            "recommendedFood": [
+                "燒咖哩 (Yaki Curry) - 門司港名物",
+                "香蕉人甜點"
+            ],
+            "nearbySpots": [
+                "九州鐵道紀念館",
+                "藍翼門司吊橋"
+            ],
+            "shoppingSideQuests": [
+                {
+                    "name": "海峽廣場",
+                    "category": "伴手禮",
+                    "description": "香蕉口味甜點、雜貨"
+                }
+            ]
+        },
+        {
+            "id": "d2-4",
+            "time": "15:30",
+            "title": "小倉城",
+            "description": "北九州的歷史象徵與天守閣",
+            "address_jp": "北九州市小倉北区城内 2-1",
+            "address_en": "Kokura Castle",
+            "coordinates": {
+                "lat": 33.8845,
+                "lng": 130.8732
+            },
+            "transportType": "TRAIN",
+            "transportDetail": "JR 回小倉站 (15分)",
+            "googleMapsQuery": "小倉城",
+            "recommendedFood": [
+                "旦過市場的大學丼",
+                "揚子江豚包 (肉包)",
+                "辻利茶舗"
+            ],
+            "nearbySpots": [
+                "旦過市場",
+                "Riverwalk 北九州",
+                "松本清張紀念館"
+            ],
+            "shoppingSideQuests": [
+                {
+                    "name": "松本清 小倉店",
+                    "category": "藥妝",
+                    "description": "人比較少，貨全"
+                },
+                {
+                    "name": "Aru Aru City",
+                    "category": "動漫",
+                    "description": "北九州秋葉原，動漫迷必去"
+                }
+            ]
+        },
+        {
+            "id": "d2-5",
+            "time": "19:00",
+            "title": "博多/天神 晚餐",
+            "description": "福岡靈魂美食：牛腸鍋或水炊鍋",
+            "address_jp": "福岡市博多区博多駅前3-23-17",
+            "address_en": "Hakata Hanamidori / Echigoya",
+            "coordinates": {
+                "lat": 33.5905,
+                "lng": 130.4182
+            },
+            "transportType": "TRAIN",
+            "transportDetail": "搭 JR 返回博多",
+            "googleMapsQuery": "博多 華味鳥",
+            "recommendedFood": [
+                "博多華味鳥 (水炊鍋)",
+                "越後屋 (牛腸鍋)",
+                "博多祇園鉄なべ (餃子)"
+            ],
+            "nearbySpots": [
+                "博多運河城",
+                "中洲川端商店街"
+            ]
+        }
+    ]
+}
