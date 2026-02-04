@@ -10,6 +10,22 @@ interface DayMapProps {
   highlightedLocation?: { lat: number, lng: number } | null;
 }
 
+// Helper to validate coordinates
+const isValidCoordinate = (lat: any, lng: any): boolean => {
+  return (
+    typeof lat === 'number' &&
+    typeof lng === 'number' &&
+    !isNaN(lat) &&
+    !isNaN(lng) &&
+    isFinite(lat) &&
+    isFinite(lng) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180
+  );
+};
+
 // Map Tile Layer Configurations
 const TILE_LAYERS = {
   Standard: {
@@ -82,83 +98,95 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    // Clear existing markers
-    markersRef.current.forEach(marker => marker.remove());
-    markersRef.current.clear();
+    try {
+      // Clear existing markers
+      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current.clear();
 
-    // Custom Icon Factory
-    const createCustomIcon = (index: number) => L.divIcon({
-      className: 'custom-div-icon',
-      html: `<div class="custom-marker-pin transition-all duration-300"></div><div style="position: absolute; top: -45px; width: 100px; text-align: center; left: -35px; font-weight: bold; color: #4338CA; text-shadow: 0 1px 2px white; pointer-events: none;">${index + 1}</div>`,
-      iconSize: [30, 42],
-      iconAnchor: [15, 42],
-      popupAnchor: [0, -35]
-    });
+      // Custom Icon Factory
+      const createCustomIcon = (index: number) => L.divIcon({
+        className: 'custom-div-icon',
+        html: `<div class="custom-marker-pin transition-all duration-300"></div><div style="position: absolute; top: -45px; width: 100px; text-align: center; left: -35px; font-weight: bold; color: #4338CA; text-shadow: 0 1px 2px white; pointer-events: none;">${index + 1}</div>`,
+        iconSize: [30, 42],
+        iconAnchor: [15, 42],
+        popupAnchor: [0, -35]
+      });
 
-    const bounds = L.latLngBounds([]);
-    let hasVisibleMarkers = false;
+      const validCoords: [number, number][] = [];
 
-    items.forEach((item, index) => {
-      // Apply Filter
-      if (activeFilter !== 'ALL' && item.transportType !== activeFilter) {
-        return;
-      }
+      items.forEach((item, index) => {
+        // Apply Filter
+        if (activeFilter !== 'ALL' && item.transportType !== activeFilter) {
+          return;
+        }
 
-      const { lat, lng } = item.coordinates;
+        const { lat, lng } = item.coordinates || {};
 
-      // Skip items with invalid coordinates
-      if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) {
-        console.warn(`Invalid coordinates for item: ${item.title}`, item.coordinates);
-        return;
-      }
+        // Skip items with invalid coordinates
+        if (!isValidCoordinate(lat, lng)) {
+          console.warn(`Invalid coordinates for item: ${item.title}`, item.coordinates);
+          return;
+        }
 
-      hasVisibleMarkers = true;
-      const marker = L.marker([lat, lng], { icon: createCustomIcon(index) })
-        .addTo(map)
-        .bindPopup(`
-          <div class="font-sans w-48 p-1">
-            <div class="flex items-center gap-2 mb-2">
-              <span class="inline-block px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[10px] font-bold tracking-wide border border-indigo-100">
-                ${item.time}
-              </span>
-            </div>
-            <h3 class="font-bold text-slate-800 text-sm leading-snug mb-2">${item.title}</h3>
-            <p class="text-slate-500 text-[10px] leading-relaxed border-t border-slate-100 pt-2 flex items-start gap-1.5">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 shrink-0 mt-0.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-              ${item.address_jp}
-            </p>
-          </div>
-        `, {
-          closeButton: false,
-          className: 'custom-popup',
-          minWidth: 200
-        });
+        try {
+          const marker = L.marker([lat, lng], { icon: createCustomIcon(index) })
+            .addTo(map)
+            .bindPopup(`
+              <div class="font-sans w-48 p-1">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="inline-block px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[10px] font-bold tracking-wide border border-indigo-100">
+                    ${item.time}
+                  </span>
+                </div>
+                <h3 class="font-bold text-slate-800 text-sm leading-snug mb-2">${item.title}</h3>
+                <p class="text-slate-500 text-[10px] leading-relaxed border-t border-slate-100 pt-2 flex items-start gap-1.5">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 shrink-0 mt-0.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                  ${item.address_jp}
+                </p>
+              </div>
+            `, {
+              closeButton: false,
+              className: 'custom-popup',
+              minWidth: 200
+            });
 
-      // Mobile: Don't auto-scroll timeline if we are in map-only mode (logic handled in App.tsx)
-      marker.on('click', () => {
-        const element = document.getElementById(`item-${item.id}`);
-        // Only scroll if element is visible (desktop or mobile list mode)
-        if (element && element.offsetParent !== null) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          element.classList.add('ring-2', 'ring-primary-500', 'ring-offset-2');
-          setTimeout(() => {
-            element.classList.remove('ring-2', 'ring-primary-500', 'ring-offset-2');
-          }, 2000);
+          // Mobile: Don't auto-scroll timeline if we are in map-only mode (logic handled in App.tsx)
+          marker.on('click', () => {
+            const element = document.getElementById(`item-${item.id}`);
+            // Only scroll if element is visible (desktop or mobile list mode)
+            if (element && element.offsetParent !== null) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              element.classList.add('ring-2', 'ring-primary-500', 'ring-offset-2');
+              setTimeout(() => {
+                element.classList.remove('ring-2', 'ring-primary-500', 'ring-offset-2');
+              }, 2000);
+            }
+          });
+
+          markersRef.current.set(item.id, marker);
+          validCoords.push([lat, lng]);
+        } catch (markerError) {
+          console.error('Error creating marker for item:', item.title, markerError);
         }
       });
 
-      markersRef.current.set(item.id, marker);
-      bounds.extend([lat, lng]);
-    });
+      // Fit bounds to visible markers (only if we have valid coordinates)
+      if (validCoords.length > 0) {
+        try {
+          const bounds = L.latLngBounds(validCoords);
+          if (bounds.isValid()) {
+            map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5 });
+          }
+        } catch (boundsError) {
+          console.error('Error fitting bounds:', boundsError);
+        }
+      }
 
-    // Fit bounds to visible markers (only if bounds are valid)
-    if (hasVisibleMarkers && bounds.isValid()) {
-      map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5 });
+      // Force resize calculation when items change (often implies view change)
+      map.invalidateSize();
+    } catch (error) {
+      console.error('Error in marker rendering:', error);
     }
-
-    // Force resize calculation when items change (often implies view change)
-    map.invalidateSize();
-
   }, [items, activeFilter]);
 
   // Handle Highlighted Location (e.g. from nearby restaurants)
@@ -168,7 +196,11 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
 
     // Remove existing highlight marker
     if (highlightMarkerRef.current) {
-      highlightMarkerRef.current.remove();
+      try {
+        highlightMarkerRef.current.remove();
+      } catch (e) {
+        // Ignore removal errors
+      }
       highlightMarkerRef.current = null;
     }
 
@@ -176,26 +208,30 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
       const { lat, lng } = highlightedLocation;
 
       // Validate coordinates before using with Leaflet
-      if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) {
+      if (!isValidCoordinate(lat, lng)) {
         console.warn('Invalid highlighted location coordinates:', highlightedLocation);
         return;
       }
 
-      // Fly to location with high zoom
-      map.flyTo([lat, lng], 17, {
-        duration: 1.0,
-        easeLinearity: 0.25
-      });
+      try {
+        // Fly to location with high zoom
+        map.flyTo([lat, lng], 17, {
+          duration: 1.0,
+          easeLinearity: 0.25
+        });
 
-      // Add a temporary highlight marker
-      highlightMarkerRef.current = L.circleMarker([lat, lng], {
-        radius: 8,
-        fillColor: '#F97316', // Orange-500
-        color: '#fff',
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.8
-      }).addTo(map);
+        // Add a temporary highlight marker
+        highlightMarkerRef.current = L.circleMarker([lat, lng], {
+          radius: 8,
+          fillColor: '#F97316', // Orange-500
+          color: '#fff',
+          weight: 2,
+          opacity: 1,
+          fillOpacity: 0.8
+        }).addTo(map);
+      } catch (error) {
+        console.error('Error handling highlighted location:', error);
+      }
     }
   }, [highlightedLocation]);
 

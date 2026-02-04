@@ -72,6 +72,15 @@ export const searchNearbyRestaurants = async (
   lng: number, 
   radius: number = 500
 ): Promise<NearbyRestaurantsResult> => {
+  // Validate input coordinates first
+  if (typeof lat !== 'number' || typeof lng !== 'number' || 
+      isNaN(lat) || isNaN(lng) || 
+      !isFinite(lat) || !isFinite(lng) ||
+      lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    console.warn('Invalid coordinates provided to searchNearbyRestaurants:', { lat, lng });
+    return { restaurants: [], apiUnavailable: true };
+  }
+
   const cacheKey = `${lat.toFixed(4)},${lng.toFixed(4)},${radius}`;
   
   // Check cache first
