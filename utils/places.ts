@@ -88,10 +88,10 @@ const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: numbe
 const restaurantCache = new Map<string, { data: NearbyRestaurantsResult, timestamp: number }>();
 
 /**
- * 快取有效期限（30 分鐘）
+ * 快取有效期限（10 分鐘）
  * 超過這個時間的快取會被視為過期
  */
-const CACHE_DURATION = 30 * 60 * 1000;
+const CACHE_DURATION = 10 * 60 * 1000;
 
 // ======================================
 // Google Maps 載入檢測
