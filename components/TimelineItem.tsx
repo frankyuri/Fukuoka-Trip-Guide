@@ -19,15 +19,25 @@ import { NearbyRestaurants } from './NearbyRestaurants';
 import { getPlaceInsight } from '../utils/gemini';
 import { downloadICS } from '../utils/calendar';
 import { ITINERARY_DATA } from '../constants'; // Need to access date context
+import { ProgressCheckbox } from './ProgressTracker';
 
 interface TimelineItemProps {
   item: ItineraryItem;
   isLast: boolean;
   onActive?: (id: string | null) => void;
   onRestaurantHover?: (location: { lat: number, lng: number } | null) => void;
+  isCompleted?: boolean;
+  onToggleComplete?: () => void;
 }
 
-export const TimelineItem: React.FC<TimelineItemProps> = ({ item, isLast, onActive, onRestaurantHover }) => {
+export const TimelineItem: React.FC<TimelineItemProps> = ({
+  item,
+  isLast,
+  onActive,
+  onRestaurantHover,
+  isCompleted = false,
+  onToggleComplete
+}) => {
   const [copied, setCopied] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiInsight, setAiInsight] = useState<string | null>(null);
@@ -80,16 +90,42 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({ item, isLast, onActi
         <div className="absolute left-[9px] md:left-[15px] top-6 bottom-0 w-[2px] bg-gradient-to-b from-primary-200 to-transparent group-hover:from-primary-400 transition-colors duration-500"></div>
       )}
 
-      {/* Timeline Node */}
-      <div className="absolute left-0 top-6 w-5 h-5 md:w-8 md:h-8 rounded-full bg-surface-50 border-2 border-primary-200 shadow-sm z-10 flex items-center justify-center transition-all duration-300 group-hover:border-primary-500 group-hover:scale-110 group-hover:bg-primary-50">
-        <div className="w-1.5 h-1.5 md:w-2.5 md:h-2.5 bg-primary-500 rounded-full"></div>
+      {/* Timeline Node - Now clickable for progress tracking */}
+      <div
+        className={`absolute left-0 top-6 w-5 h-5 md:w-8 md:h-8 rounded-full shadow-sm z-10 flex items-center justify-center transition-all duration-300 cursor-pointer
+          ${isCompleted
+            ? 'bg-green-500 border-2 border-green-500'
+            : 'bg-surface-50 border-2 border-primary-200 group-hover:border-primary-500 group-hover:scale-110 group-hover:bg-primary-50'
+          }`}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleComplete?.();
+        }}
+        title={isCompleted ? '標記為未完成' : '標記為已完成'}
+      >
+        {isCompleted ? (
+          <CheckCheck size={14} className="text-white" />
+        ) : (
+          <div className="w-1.5 h-1.5 md:w-2.5 md:h-2.5 bg-primary-500 rounded-full"></div>
+        )}
       </div>
 
       {/* Main Card */}
       <div
         onClick={handleOpenMaps}
-        className="relative bg-white rounded-xl md:rounded-2xl shadow-sm hover:shadow-card border border-gray-100 p-4 md:p-6 transition-all duration-300 transform md:hover:-translate-y-1 cursor-pointer group/card active:scale-[0.99]"
+        className={`relative rounded-xl md:rounded-2xl shadow-sm hover:shadow-card border p-4 md:p-6 transition-all duration-300 transform md:hover:-translate-y-1 cursor-pointer group/card active:scale-[0.99]
+          ${isCompleted
+            ? 'bg-green-50/50 border-green-200'
+            : 'bg-white border-gray-100'
+          }`}
       >
+        {/* Completed Badge */}
+        {isCompleted && (
+          <div className="absolute top-3 right-3 flex items-center gap-1 bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+            <CheckCheck size={10} />
+            已完成
+          </div>
+        )}
         {/* Header: Time & Title */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3">
           <div className="flex items-start md:items-center gap-2 md:gap-3 flex-col md:flex-row">

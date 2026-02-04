@@ -4,6 +4,9 @@ import { TimelineItem } from './components/TimelineItem';
 import { Footer } from './components/Footer';
 import { WeatherWidget } from './components/WeatherWidget';
 import { ShareButton } from './components/ShareButton';
+import { useProgressTracker, DayProgressBar } from './components/ProgressTracker';
+import { EmergencyInfo } from './components/EmergencyInfo';
+import { CountdownWidget } from './components/CountdownWidget';
 import { Plane, Map as MapIcon, List, Loader2 } from 'lucide-react';
 
 // Lazy load heavy components for code splitting
@@ -63,6 +66,10 @@ const App: React.FC = () => {
   }, [activeDayIndex]);
 
   const activeDay = ITINERARY_DATA[activeDayIndex];
+
+  // Progress tracking
+  const { toggleItem, isCompleted, getProgress } = useProgressTracker();
+  const dayProgress = getProgress(activeDay.items.map(item => item.id));
 
   return (
     <div className="min-h-screen font-sans bg-surface-50 text-slate-800 pb-20 md:pb-12">
@@ -141,7 +148,23 @@ const App: React.FC = () => {
             <WeatherWidget date={activeDay.date} />
             <ShareButton dayIndex={activeDayIndex} dayTitle={activeDay.dayTitle} />
           </div>
+
+          {/* Day Progress Bar */}
+          <div className="w-full max-w-md">
+            <DayProgressBar
+              completed={dayProgress.completed}
+              total={dayProgress.total}
+            />
+          </div>
         </div>
+
+        {/* Countdown & Emergency Info - Only show on first day or when trip is upcoming */}
+        {activeDayIndex === 0 && (
+          <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CountdownWidget tripStartDate={ITINERARY_DATA[0].date} />
+            <EmergencyInfo />
+          </div>
+        )}
 
         {/* 
           Split View Container 
@@ -160,6 +183,8 @@ const App: React.FC = () => {
                   isLast={index === activeDay.items.length - 1}
                   onActive={setActiveItemId}
                   onRestaurantHover={setHighlightedLocation}
+                  isCompleted={isCompleted(item.id)}
+                  onToggleComplete={() => toggleItem(item.id)}
                 />
               ))}
             </div>
