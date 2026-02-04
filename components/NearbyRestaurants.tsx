@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Star, MapPin, Clock, ChevronDown, ChevronUp, Loader2, Navigation, ExternalLink } from 'lucide-react';
+import { Star, MapPin, Clock, ChevronDown, ChevronUp, Loader2, Navigation, ExternalLink, AlertCircle } from 'lucide-react';
 import { searchNearbyRestaurants, formatPriceLevel, formatDistance, NearbyRestaurant } from '../utils/places';
 
 interface NearbyRestaurantsProps {
@@ -22,9 +22,10 @@ export const NearbyRestaurants: React.FC<NearbyRestaurantsProps> = ({
     const [restaurants, setRestaurants] = useState<NearbyRestaurant[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [apiUnavailable, setApiUnavailable] = useState(false);
 
     useEffect(() => {
-        if (isExpanded && restaurants.length === 0) {
+        if (isExpanded && restaurants.length === 0 && !apiUnavailable) {
             loadRestaurants();
         }
     }, [isExpanded]);
@@ -32,9 +33,11 @@ export const NearbyRestaurants: React.FC<NearbyRestaurantsProps> = ({
     const loadRestaurants = async () => {
         setLoading(true);
         setError(null);
+        setApiUnavailable(false);
         try {
-            const results = await searchNearbyRestaurants(lat, lng, 500);
-            setRestaurants(results);
+            const result = await searchNearbyRestaurants(lat, lng, 500);
+            setRestaurants(result.restaurants);
+            setApiUnavailable(result.apiUnavailable);
         } catch (err) {
             setError('無法載入附近餐廳');
         } finally {
@@ -79,7 +82,26 @@ export const NearbyRestaurants: React.FC<NearbyRestaurantsProps> = ({
                         </div>
                     )}
 
-                    {!loading && !error && restaurants.length === 0 && (
+                    {!loading && !error && apiUnavailable && (
+                        <div className="flex flex-col items-center py-6 px-4 bg-amber-50 rounded-lg border border-amber-100">
+                            <AlertCircle size={24} className="text-amber-500 mb-2" />
+                            <p className="text-amber-700 text-sm font-medium text-center mb-3">
+                                餐廳搜尋服務暫時無法使用
+                            </p>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const query = encodeURIComponent(`${locationName} 附近餐廳`);
+                                    window.open(`https://www.google.com/maps/search/${query}`, '_blank');
+                                }}
+                                className="text-xs bg-amber-100 text-amber-700 px-3 py-1.5 rounded-full hover:bg-amber-200 transition-colors font-medium"
+                            >
+                                在 Google Maps 搜尋
+                            </button>
+                        </div>
+                    )}
+
+                    {!loading && !error && !apiUnavailable && restaurants.length === 0 && (
                         <div className="text-center py-4 text-gray-400 text-sm">
                             附近沒有找到餐廳
                         </div>

@@ -15,6 +15,11 @@ export interface NearbyRestaurant {
   location?: { lat: number, lng: number };
 }
 
+export interface NearbyRestaurantsResult {
+  restaurants: NearbyRestaurant[];
+  apiUnavailable: boolean;
+}
+
 // Calculate distance between two coordinates in meters
 const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
   const R = 6371e3; // Earth's radius in meters
@@ -32,7 +37,7 @@ const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: numbe
 };
 
 // Cache for nearby restaurants to avoid repeated API calls
-const restaurantCache = new Map<string, { data: NearbyRestaurant[], timestamp: number }>();
+const restaurantCache = new Map<string, { data: NearbyRestaurantsResult, timestamp: number }>();
 const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
 
 // Wait for Google Maps to load
@@ -66,7 +71,7 @@ export const searchNearbyRestaurants = async (
   lat: number, 
   lng: number, 
   radius: number = 500
-): Promise<NearbyRestaurant[]> => {
+): Promise<NearbyRestaurantsResult> => {
   const cacheKey = `${lat.toFixed(4)},${lng.toFixed(4)},${radius}`;
   
   // Check cache first
@@ -83,7 +88,7 @@ export const searchNearbyRestaurants = async (
     
     if (!google?.maps?.places) {
       console.warn('Google Maps Places library not loaded');
-      return getMockRestaurants(lat, lng);
+      return { restaurants: [], apiUnavailable: true };
     }
 
     // Create a temporary div for PlacesService (required by API)
@@ -128,65 +133,24 @@ export const searchNearbyRestaurants = async (
           // Sort by distance
           restaurants.sort((a, b) => (a.distance || 0) - (b.distance || 0));
 
+          const result = { restaurants, apiUnavailable: false };
+          
           // Cache the results
-          restaurantCache.set(cacheKey, { data: restaurants, timestamp: Date.now() });
+          restaurantCache.set(cacheKey, { data: result, timestamp: Date.now() });
 
-          resolve(restaurants);
+          resolve(result);
         } else if (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS) {
-          resolve([]);
+          resolve({ restaurants: [], apiUnavailable: false });
         } else {
           console.error('Places API error:', status);
-          resolve(getMockRestaurants(lat, lng));
+          resolve({ restaurants: [], apiUnavailable: true });
         }
       });
     });
   } catch (error) {
     console.error('Error fetching nearby restaurants:', error);
-    return getMockRestaurants(lat, lng);
+    return { restaurants: [], apiUnavailable: true };
   }
-};
-
-// Mock data for development/fallback
-const getMockRestaurants = (lat: number, lng: number): NearbyRestaurant[] => {
-  // Generate mock locations near the provided coordinates
-  return [
-    {
-      placeId: 'mock-1',
-      name: '博多一幸舎',
-      rating: 4.2,
-      userRatingsTotal: 1250,
-      priceLevel: 2,
-      address: '福岡市博多区博多駅前',
-      isOpen: true,
-      distance: 120,
-      types: ['restaurant', 'food'],
-      location: { lat: lat + 0.001, lng: lng + 0.001 }
-    },
-    {
-      placeId: 'mock-2', 
-      name: '一蘭 本店',
-      rating: 4.5,
-      userRatingsTotal: 3400,
-      priceLevel: 2,
-      address: '福岡市中央区天神',
-      isOpen: true,
-      distance: 250,
-      types: ['restaurant', 'food'],
-      location: { lat: lat + 0.002, lng: lng - 0.001 }
-    },
-    {
-      placeId: 'mock-3',
-      name: '元祖長浜屋',
-      rating: 4.0,
-      userRatingsTotal: 890,
-      priceLevel: 1,
-      address: '福岡市中央区長浜',
-      isOpen: false,
-      distance: 380,
-      types: ['restaurant', 'food'],
-      location: { lat: lat - 0.002, lng: lng + 0.002 }
-    }
-  ];
 };
 
 // Format price level to yen symbols
