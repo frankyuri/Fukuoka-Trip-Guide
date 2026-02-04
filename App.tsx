@@ -89,7 +89,7 @@ const App: React.FC = () => {
           </div>
 
           <h1 className="text-3xl md:text-6xl font-black mb-3 md:mb-4 leading-tight tracking-tight">
-            福岡<span className="bg-gradient-to-r from-sakura-300 to-sunset-gold bg-clip-text text-transparent">充實</span>之旅
+            福岡之旅
           </h1>
           <p className="text-white/80 max-w-lg mx-auto text-xs md:text-lg font-light mb-6 md:mb-8 px-4 leading-relaxed">
             從博多地標到門司港懷舊，為您量身打造的 4 天 3 夜完美行程。

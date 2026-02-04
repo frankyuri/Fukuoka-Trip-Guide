@@ -1,16 +1,55 @@
+/**
+ * DayMap.tsx - 互動式地圖元件
+ * 
+ * 功能：
+ * - 使用 Leaflet 顯示互動式地圖
+ * - 顯示行程中每個景點的標記
+ * - 支援交通工具篩選（計程車、步行、火車等）
+ * - 支援多種地圖樣式（標準、衛星、地形）
+ * - 點擊標記可跳轉到對應的時間軸項目
+ * - 支援高亮顯示特定位置（如附近餐廳）
+ */
+
 import React, { useEffect, useRef, useState } from 'react';
 import * as L from 'leaflet';
 import { ItineraryItem, TransportType } from '../types';
 import { Filter, X } from 'lucide-react';
 import { TransportIcon, getTransportLabel } from './TransportIcon';
 
+// ======================================
+// 型別定義
+// ======================================
+
+/**
+ * DayMap 元件的 Props
+ * @property items - 當日的行程項目陣列
+ * @property activeItemId - 目前選中的項目 ID（用於高亮標記）
+ * @property highlightedLocation - 要高亮的座標（如從餐廳列表 hover 時）
+ */
 interface DayMapProps {
   items: ItineraryItem[];
   activeItemId?: string | null;
   highlightedLocation?: { lat: number, lng: number } | null;
 }
 
-// Helper to validate coordinates
+// ======================================
+// 座標驗證工具
+// ======================================
+
+/**
+ * 驗證座標是否有效
+ * 
+ * 檢查項目：
+ * - 是否為數字型別
+ * - 是否為 NaN
+ * - 是否為有限數（非 Infinity）
+ * - 緯度是否在 -90 ~ 90 範圍
+ * - 經度是否在 -180 ~ 180 範圍
+ * 
+ * @param lat - 緯度
+ * @param lng - 經度
+ * @returns 是否為有效座標
+ */
 const isValidCoordinate = (lat: any, lng: any): boolean => {
   return (
     typeof lat === 'number' &&
@@ -26,28 +65,60 @@ const isValidCoordinate = (lat: any, lng: any): boolean => {
   );
 };
 
-// Map Tile Layer Configurations
+// ======================================
+// 地圖圖層設定
+// ======================================
+
+/**
+ * 可用的地圖磚塊圖層
+ * 使用者可以在地圖上切換不同的樣式
+ */
 const TILE_LAYERS = {
+  /** 標準地圖 - CARTO Voyager（清晰、現代風格） */
   Standard: {
     url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
   },
+  /** 衛星影像 - ESRI World Imagery */
   Satellite: {
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
   },
+  /** 地形圖 - OpenTopoMap */
   Terrain: {
     url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
     attribution: 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
   }
 };
 
-// Wrapper to render TransportIcon as JSX element for filter menu
+/**
+ * 渲染交通工具圖示（用於篩選選單）
+ */
 const renderTransportIcon = (type: TransportType) => <TransportIcon type={type} size={16} />;
 
+// ======================================
+// 主元件
+// ======================================
+
+/**
+ * DayMap 互動式地圖元件
+ * 
+ * 使用方式：
+ * ```tsx
+ * <DayMap 
+ *   items={dayItems} 
+ *   activeItemId={selectedId}
+ *   highlightedLocation={hoveredRestaurantLocation}
+ * />
+ * ```
+ */
 export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlightedLocation }) => {
+  // ====== Refs ======
+  /** 地圖容器的 DOM 參考 */
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  /** Leaflet Map 實例的參考 */
   const mapInstanceRef = useRef<L.Map | null>(null);
+
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
   const highlightMarkerRef = useRef<L.CircleMarker | null>(null);
 
