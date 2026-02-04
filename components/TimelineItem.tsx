@@ -17,6 +17,7 @@ import { ItineraryItem, TransportType } from '../types';
 import { TransportIcon } from './TransportIcon';
 import { NearbyRestaurants } from './NearbyRestaurants';
 import { getPlaceInsight } from '../utils/gemini';
+import { searchNearbyRestaurants } from '../utils/places';
 import { downloadICS } from '../utils/calendar';
 import { ITINERARY_DATA } from '../constants'; // Need to access date context
 import { ProgressCheckbox } from './ProgressTracker';
@@ -63,8 +64,21 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
     }
 
     setAiLoading(true);
-    const insight = await getPlaceInsight(item.title);
-    setAiInsight(insight);
+
+    // 同時搜尋附近餐廳，一起丟給 AI 做諮詢
+    try {
+      const { restaurants } = await searchNearbyRestaurants(
+        item.coordinates.lat,
+        item.coordinates.lng,
+        500
+      );
+      const insight = await getPlaceInsight(item.title, restaurants);
+      setAiInsight(insight);
+    } catch (error) {
+      const insight = await getPlaceInsight(item.title);
+      setAiInsight(insight);
+    }
+
     setAiLoading(false);
   };
 
