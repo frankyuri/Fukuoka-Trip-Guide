@@ -190,9 +190,24 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
             </button>
             <div className="flex gap-2 items-start">
               <Sparkles size={16} className="text-purple-500 mt-0.5 flex-shrink-0" />
-              <p className="text-sm text-purple-800 leading-relaxed font-medium">
-                {aiInsight}
-              </p>
+              <div
+                className="text-sm text-purple-800 leading-relaxed font-medium prose prose-sm prose-purple max-w-none
+                  [&>p]:mb-2 [&>p:last-child]:mb-0
+                  [&_strong]:text-purple-900 [&_strong]:font-bold
+                  [&_ol]:list-decimal [&_ol]:pl-4 [&_ol]:space-y-1
+                  [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:space-y-1"
+                dangerouslySetInnerHTML={{
+                  __html: aiInsight
+                    // 轉換換行
+                    .replace(/\n\n/g, '</p><p>')
+                    .replace(/\n/g, '<br/>')
+                    // 轉換粗體
+                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                    // 包裝成段落
+                    .replace(/^/, '<p>')
+                    .replace(/$/, '</p>')
+                }}
+              />
             </div>
           </div>
         )}
