@@ -114,7 +114,7 @@ const renderTransportIcon = (type: TransportType) => <TransportIcon type={type} 
  * />
  * ```
  */
-export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlightedLocation }) => {
+export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlightedLocation }) => {
   // ====== Refs ======
   /** 地圖容器的 DOM 參考 */
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -590,4 +590,4 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
        `}</style>
     </div>
   );
-};
+});

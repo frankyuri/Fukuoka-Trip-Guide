@@ -5,8 +5,9 @@ import { Footer } from './components/Footer';
 import { WeatherWidget } from './components/WeatherWidget';
 import { ShareButton } from './components/ShareButton';
 import { useProgressTracker, DayProgressBar } from './components/ProgressTracker';
-import { EmergencyInfo } from './components/EmergencyInfo';
-import { CountdownWidget } from './components/CountdownWidget';
+// Lazy load heavy components for code splitting
+const CountdownWidget = lazy(() => import('./components/CountdownWidget').then(m => ({ default: m.CountdownWidget })));
+const EmergencyInfo = lazy(() => import('./components/EmergencyInfo').then(m => ({ default: m.EmergencyInfo })));
 import { Plane, Map as MapIcon, List, Loader2 } from 'lucide-react';
 
 // Lazy load heavy components for code splitting
@@ -161,8 +162,12 @@ const App: React.FC = () => {
         {/* Countdown & Emergency Info - Only show on first day or when trip is upcoming */}
         {activeDayIndex === 0 && (
           <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <CountdownWidget tripStartDate={ITINERARY_DATA[0].date} />
-            <EmergencyInfo />
+            <Suspense fallback={<WidgetLoadingFallback />}>
+              <CountdownWidget tripStartDate={ITINERARY_DATA[0].date} />
+            </Suspense>
+            <Suspense fallback={<WidgetLoadingFallback />}>
+              <EmergencyInfo />
+            </Suspense>
           </div>
         )}
 

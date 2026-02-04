@@ -8,7 +8,7 @@
  * - 全部完成時顯示慶祝動畫
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { CheckCircle2, Circle, Trophy, Sparkles } from 'lucide-react';
 
 // ======================================
@@ -79,7 +79,7 @@ export const useProgressTracker = () => {
      * 
      * @param itemId - 要切換的項目 ID
      */
-    const toggleItem = (itemId: string) => {
+    const toggleItem = useCallback((itemId: string) => {
         setCompletedItems(prev => {
             // 建立新的 Set（React 需要新的參考才會觸發重新渲染）
             const newSet = new Set(prev);
@@ -98,7 +98,7 @@ export const useProgressTracker = () => {
 
             return newSet;
         });
-    };
+    }, []);
 
     /**
      * 檢查某個項目是否已完成
@@ -106,7 +106,7 @@ export const useProgressTracker = () => {
      * @param itemId - 要檢查的項目 ID
      * @returns 是否已完成
      */
-    const isCompleted = (itemId: string) => completedItems.has(itemId);
+    const isCompleted = useCallback((itemId: string) => completedItems.has(itemId), [completedItems]);
 
     /**
      * 計算一組項目的進度統計
@@ -114,7 +114,7 @@ export const useProgressTracker = () => {
      * @param itemIds - 項目 ID 陣列
      * @returns 進度統計物件
      */
-    const getProgress = (itemIds: string[]) => {
+    const getProgress = useCallback((itemIds: string[]) => {
         // 計算已完成的數量
         const completed = itemIds.filter(id => completedItems.has(id)).length;
 
@@ -123,15 +123,15 @@ export const useProgressTracker = () => {
             total: itemIds.length,                                  // 總數量
             percentage: Math.round((completed / itemIds.length) * 100)  // 完成百分比
         };
-    };
+    }, [completedItems]);
 
     /**
      * 重置所有進度（清除所有已完成標記）
      */
-    const resetProgress = () => {
+    const resetProgress = useCallback(() => {
         setCompletedItems(new Set());
         localStorage.removeItem('fukuoka_trip_progress');
-    };
+    }, []);
 
     return { toggleItem, isCompleted, getProgress, resetProgress, completedItems };
 };
@@ -233,8 +233,8 @@ export const DayProgressBar: React.FC<{
                 {/* 進度條填充（使用 CSS transition 實現動畫） */}
                 <div
                     className={`h-full rounded-full transition-all duration-500 ease-out ${isComplete
-                            ? 'bg-gradient-to-r from-green-400 to-emerald-500'   // 完成時的漸層
-                            : 'bg-gradient-to-r from-primary-400 to-primary-500' // 進行中的漸層
+                        ? 'bg-gradient-to-r from-green-400 to-emerald-500'   // 完成時的漸層
+                        : 'bg-gradient-to-r from-primary-400 to-primary-500' // 進行中的漸層
                         }`}
                     style={{ width: `${percentage}%` }}  // 寬度由百分比控制
                 />

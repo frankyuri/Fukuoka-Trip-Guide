@@ -30,7 +30,7 @@ interface TimelineItemProps {
   onToggleComplete?: () => void;
 }
 
-export const TimelineItem: React.FC<TimelineItemProps> = ({
+export const TimelineItem = React.memo<TimelineItemProps>(({
   item,
   isLast,
   onActive,
@@ -280,4 +280,4 @@ export const TimelineItem: React.FC<TimelineItemProps> = ({
       </div>
     </div>
   );
-};
+});
