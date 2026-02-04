@@ -13,8 +13,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as L from 'leaflet';
 import { ItineraryItem, TransportType } from '../types';
-import { Filter, X } from 'lucide-react';
+import { Filter, X, Star, Utensils } from 'lucide-react';
 import { TransportIcon, getTransportLabel } from './TransportIcon';
+import { searchNearbyRestaurants, NearbyRestaurant } from '../utils/places';
 
 // ======================================
 // 型別定義
@@ -128,6 +129,11 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
 
   // ====== 選中的項目（用於底部卡片顯示） ======
   const [selectedItem, setSelectedItem] = useState<ItineraryItem | null>(null);
+
+  // ====== 附近餐廳（點擊 pin 後顯示） ======
+  const [nearbyRestaurants, setNearbyRestaurants] = useState<NearbyRestaurant[]>([]);
+  const restaurantMarkersRef = useRef<L.Marker[]>([]);
+  const [isLoadingRestaurants, setIsLoadingRestaurants] = useState(false);
 
   // ====== 載入狀態（用於顯示骨架動畫） ======
   const [isMapLoading, setIsMapLoading] = useState(true);
@@ -255,10 +261,15 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
           const marker = L.marker([lat, lng], { icon: createCustomIcon(index) })
             .addTo(map);
 
-          // 點擊標記時：顯示底部卡片，不使用 popup
-          marker.on('click', () => {
+          // 點擊標記時：顯示底部卡片 + 搜尋附近餐廳
+          marker.on('click', async () => {
             // 設定選中的項目（觸發底部卡片顯示）
             setSelectedItem(item);
+
+            // 清除之前的餐廳標記
+            restaurantMarkersRef.current.forEach(m => m.remove());
+            restaurantMarkersRef.current = [];
+            setNearbyRestaurants([]);
 
             // 平移地圖讓標記在畫面中間偏上（給底部卡片留空間）
             const point = map.latLngToContainerPoint([lat, lng]);
@@ -275,8 +286,45 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
                 element.classList.remove('ring-2', 'ring-primary-500', 'ring-offset-2');
               }, 2000);
             }
-          });
 
+            // ====== 搜尋附近 500m 的餐廳 ======
+            setIsLoadingRestaurants(true);
+            try {
+              const result = await searchNearbyRestaurants(lat, lng, 500);
+              if (!result.apiUnavailable && result.restaurants.length > 0) {
+                setNearbyRestaurants(result.restaurants.slice(0, 5)); // 最多顯示 5 間
+
+                // 建立餐廳標記
+                result.restaurants.slice(0, 5).forEach((restaurant) => {
+                  if (!restaurant.location) return;
+
+                  // 建立餐廳標記圖示（小型、橘色）
+                  const restaurantIcon = L.divIcon({
+                    className: 'restaurant-marker-icon',
+                    html: `
+                      <div class="restaurant-pin">
+                        <span class="restaurant-name">${restaurant.name.slice(0, 8)}${restaurant.name.length > 8 ? '...' : ''}</span>
+                        ${restaurant.rating ? `<span class="restaurant-rating">★${restaurant.rating}</span>` : ''}
+                      </div>
+                    `,
+                    iconSize: [80, 40],
+                    iconAnchor: [40, 40],
+                  });
+
+                  const restaurantMarker = L.marker(
+                    [restaurant.location.lat, restaurant.location.lng],
+                    { icon: restaurantIcon }
+                  ).addTo(map);
+
+                  restaurantMarkersRef.current.push(restaurantMarker);
+                });
+              }
+            } catch (err) {
+              console.error('Failed to fetch nearby restaurants:', err);
+            } finally {
+              setIsLoadingRestaurants(false);
+            }
+          });
 
           markersRef.current.set(item.id, marker);
           validCoords.push([lat, lng]);
@@ -429,7 +477,13 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
           <div className="bg-white rounded-xl shadow-xl border border-gray-100 p-4 relative">
             {/* 關閉按鈕 */}
             <button
-              onClick={() => setSelectedItem(null)}
+              onClick={() => {
+                setSelectedItem(null);
+                // 清除餐廳標記
+                restaurantMarkersRef.current.forEach(m => m.remove());
+                restaurantMarkersRef.current = [];
+                setNearbyRestaurants([]);
+              }}
               className="absolute top-2 right-2 p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
             >
               <X size={14} className="text-gray-500" />
@@ -439,9 +493,9 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
             <div className="flex items-start gap-3 pr-6">
               {/* 時間標籤 */}
               <div className="flex-shrink-0">
-                <span className="inline-block px-2.5 py-1 rounded-lg bg-primary-50 text-primary-700 text-xs font-bold border border-primary-100">
+                <div className="inline-block px-2.5 py-1 rounded-lg bg-primary-50 text-primary-700 text-xs font-bold border border-primary-100">
                   {selectedItem.time}
-                </span>
+                </div>
               </div>
 
               {/* 資訊區 */}
@@ -449,9 +503,23 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
                 <h4 className="font-bold text-gray-800 text-sm mb-1 truncate">
                   {selectedItem.title}
                 </h4>
-                <p className="text-xs text-gray-500 line-clamp-2">
+                <p className="text-xs text-gray-500 line-clamp-1">
                   {selectedItem.address_jp}
                 </p>
+
+                {/* 餐廳狀態指示 */}
+                {isLoadingRestaurants && (
+                  <p className="text-xs text-orange-500 mt-1 flex items-center gap-1">
+                    <Utensils size={10} />
+                    搜尋附近餐廳...
+                  </p>
+                )}
+                {!isLoadingRestaurants && nearbyRestaurants.length > 0 && (
+                  <p className="text-xs text-orange-600 mt-1 flex items-center gap-1">
+                    <Utensils size={10} />
+                    找到 {nearbyRestaurants.length} 間餐廳
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -473,6 +541,39 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
            font-size: 12px;
            font-weight: bold;
            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+         }
+         
+         /* 餐廳標記樣式 */
+         .restaurant-marker-icon {
+           pointer-events: none;
+         }
+         
+         .restaurant-pin {
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+           gap: 2px;
+           background: rgba(251, 146, 60, 0.95);
+           padding: 4px 8px;
+           border-radius: 8px;
+           border: 1px solid white;
+           box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+           white-space: nowrap;
+         }
+         
+         .restaurant-name {
+           font-size: 10px;
+           font-weight: 600;
+           color: white;
+           max-width: 70px;
+           overflow: hidden;
+           text-overflow: ellipsis;
+         }
+         
+         .restaurant-rating {
+           font-size: 9px;
+           color: #FFFBEB;
+           font-weight: 500;
          }
          
          /* Fix Z-index for mobile controls */
