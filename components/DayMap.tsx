@@ -125,6 +125,9 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
   const [activeFilter, setActiveFilter] = useState<TransportType | 'ALL'>('ALL');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
+  // ====== 選中的項目（用於底部卡片顯示） ======
+  const [selectedItem, setSelectedItem] = useState<ItineraryItem | null>(null);
+
   // ====== 載入狀態（用於顯示骨架動畫） ======
   const [isMapLoading, setIsMapLoading] = useState(true);
 
@@ -233,30 +236,21 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
 
         try {
           const marker = L.marker([lat, lng], { icon: createCustomIcon(index) })
-            .addTo(map)
-            .bindPopup(`
-              <div class="font-sans w-48 p-1">
-                <div class="flex items-center gap-2 mb-2">
-                  <span class="inline-block px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[10px] font-bold tracking-wide border border-indigo-100">
-                    ${item.time}
-                  </span>
-                </div>
-                <h3 class="font-bold text-slate-800 text-sm leading-snug mb-2">${item.title}</h3>
-                <p class="text-slate-500 text-[10px] leading-relaxed border-t border-slate-100 pt-2 flex items-start gap-1.5">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 shrink-0 mt-0.5"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                  ${item.address_jp}
-                </p>
-              </div>
-            `, {
-              closeButton: false,
-              className: 'custom-popup',
-              minWidth: 200
-            });
+            .addTo(map);
 
-          // Mobile: Don't auto-scroll timeline if we are in map-only mode (logic handled in App.tsx)
+          // 點擊標記時：顯示底部卡片，不使用 popup
           marker.on('click', () => {
+            // 設定選中的項目（觸發底部卡片顯示）
+            setSelectedItem(item);
+
+            // 平移地圖讓標記在畫面中間偏上（給底部卡片留空間）
+            const point = map.latLngToContainerPoint([lat, lng]);
+            const newPoint = L.point(point.x, point.y + 80);
+            const newLatLng = map.containerPointToLatLng(newPoint);
+            map.panTo(newLatLng, { animate: true, duration: 0.3 });
+
+            // 同時高亮時間軸上的項目（如果可見）
             const element = document.getElementById(`item-${item.id}`);
-            // Only scroll if element is visible (desktop or mobile list mode)
             if (element && element.offsetParent !== null) {
               element.scrollIntoView({ behavior: 'smooth', block: 'center' });
               element.classList.add('ring-2', 'ring-primary-500', 'ring-offset-2');
@@ -265,6 +259,7 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
               }, 2000);
             }
           });
+
 
           markersRef.current.set(item.id, marker);
           validCoords.push([lat, lng]);
@@ -409,19 +404,44 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
         )}
       </div>
 
+      {/* ====== 底部卡片（取代 popup） ====== */}
+      {selectedItem && (
+        <div
+          className="absolute bottom-4 left-4 right-4 z-[1000] animate-in slide-in-from-bottom-4 fade-in duration-300"
+        >
+          <div className="bg-white rounded-xl shadow-xl border border-gray-100 p-4 relative">
+            {/* 關閉按鈕 */}
+            <button
+              onClick={() => setSelectedItem(null)}
+              className="absolute top-2 right-2 p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+            >
+              <X size={14} className="text-gray-500" />
+            </button>
+
+            {/* 卡片內容 */}
+            <div className="flex items-start gap-3 pr-6">
+              {/* 時間標籤 */}
+              <div className="flex-shrink-0">
+                <span className="inline-block px-2.5 py-1 rounded-lg bg-primary-50 text-primary-700 text-xs font-bold border border-primary-100">
+                  {selectedItem.time}
+                </span>
+              </div>
+
+              {/* 資訊區 */}
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-gray-800 text-sm mb-1 truncate">
+                  {selectedItem.title}
+                </h4>
+                <p className="text-xs text-gray-500 line-clamp-2">
+                  {selectedItem.address_jp}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
-         .leaflet-popup-content-wrapper {
-           border-radius: 12px;
-           box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-           padding: 0;
-           overflow: hidden;
-         }
-         .leaflet-popup-content {
-           margin: 12px;
-         }
-         .leaflet-popup-tip {
-           box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-         }
          /* Fix Z-index for mobile controls */
          .leaflet-control-zoom {
             border: none !important;
