@@ -38,17 +38,6 @@ interface DayMapProps {
 
 /**
  * 驗證座標是否有效
- * 
- * 檢查項目：
- * - 是否為數字型別
- * - 是否為 NaN
- * - 是否為有限數（非 Infinity）
- * - 緯度是否在 -90 ~ 90 範圍
- * - 經度是否在 -180 ~ 180 範圍
- * 
- * @param lat - 緯度
- * @param lng - 經度
- * @returns 是否為有效座標
  */
 const isValidCoordinate = (lat: any, lng: any): boolean => {
   return (
@@ -62,6 +51,18 @@ const isValidCoordinate = (lat: any, lng: any): boolean => {
     lat <= 90 &&
     lng >= -180 &&
     lng <= 180
+  );
+};
+
+/**
+ * 檢測是否為手機裝置
+ * 用於針對手機做效能優化
+ */
+const isMobileDevice = (): boolean => {
+  return (
+    typeof window !== 'undefined' &&
+    (window.innerWidth < 768 ||
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent))
   );
 };
 
@@ -135,15 +136,21 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
-    // ====== 建立圖層（使用較快的 CDN） ======
-    // 使用 updateWhenIdle 和 updateWhenZooming 優化手機效能
+    const isMobile = isMobileDevice();
+
+    // ====== 建立圖層（針對手機優化） ======
     const tileOptions = {
       attribution: TILE_LAYERS.Standard.attribution,
-      updateWhenIdle: true,        // 只在停止移動時更新磚塊
-      updateWhenZooming: false,    // 縮放時不更新（減少請求）
-      keepBuffer: 2,               // 保留周圍 2 塊磚塊的快取
+      updateWhenIdle: true,           // 只在停止移動時更新磚塊
+      updateWhenZooming: false,       // 縮放時不更新
+      keepBuffer: isMobile ? 1 : 2,   // 手機上減少快取（節省記憶體）
       maxZoom: 18,
-      crossOrigin: true,           // 允許快取跨域磚塊
+      crossOrigin: true,
+      // 手機上的額外優化
+      ...(isMobile && {
+        tileSize: 256,                // 使用標準大小
+        zoomOffset: 0,
+      })
     };
 
     const standardLayer = L.tileLayer(TILE_LAYERS.Standard.url, tileOptions);
@@ -156,16 +163,26 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
       attribution: TILE_LAYERS.Terrain.attribution
     });
 
-    // ====== 建立地圖實例 ======
+    // ====== 建立地圖實例（針對手機優化） ======
     const map = L.map(mapContainerRef.current, {
-      zoomControl: false,          // 手動設定位置
+      zoomControl: false,
       attributionControl: false,
-      layers: [standardLayer],     // 預設圖層
-      preferCanvas: true,          // 使用 Canvas 渲染（比 SVG 快）
-      fadeAnimation: false,        // 關閉淡入動畫（加快顯示）
-      zoomAnimation: true,         // 保留縮放動畫
-      markerZoomAnimation: true,
-    }).setView([33.5902, 130.4017], 13); // 福岡市中心
+      layers: [standardLayer],
+      preferCanvas: true,              // Canvas 渲染（比 SVG 快）
+      fadeAnimation: false,            // 關閉淡入動畫
+      zoomAnimation: !isMobile,        // 手機上關閉縮放動畫
+      markerZoomAnimation: !isMobile,  // 手機上關閉標記動畫
+      // 手機觸控優化
+      tap: isMobile,                   // 啟用觸控點擊
+      tapTolerance: 15,                // 觸控容差
+      touchZoom: true,
+      bounceAtZoomLimits: false,       // 關閉縮放邊界彈跳
+      // 關閉慣性滾動（省電）
+      inertia: !isMobile,
+      inertiaDeceleration: 3000,
+      // 減少重繪
+      renderer: L.canvas({ padding: 0.5 }),
+    }).setView([33.5902, 130.4017], 13);
 
     mapInstanceRef.current = map;
 
@@ -174,13 +191,13 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
       setIsMapLoading(false);
     });
 
-    // 如果 3 秒後還沒載入完成，也隱藏 loading（避免卡住）
-    setTimeout(() => setIsMapLoading(false), 3000);
+    // 2 秒後強制隱藏 loading（手機上縮短時間）
+    setTimeout(() => setIsMapLoading(false), isMobile ? 2000 : 3000);
 
-    // Add Controls - Position bottom-right to avoid conflict with top filters on mobile
+    // 縮放控制
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // Use localized labels for the layer control
+    // 圖層切換控制
     const baseMaps = {
       "標準地圖": standardLayer,
       "衛星影像": satelliteLayer,
@@ -188,10 +205,10 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
     };
     L.control.layers(baseMaps, undefined, { position: 'bottomright' }).addTo(map);
 
-    // Invalidate size after a slight delay to ensure correct rendering if container resized
+    // 延遲重算尺寸
     setTimeout(() => {
       map.invalidateSize();
-    }, 200);
+    }, 100);
 
     return () => {
       map.remove();
@@ -209,13 +226,13 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
       markersRef.current.forEach(marker => marker.remove());
       markersRef.current.clear();
 
-      // Custom Icon Factory
+      // ====== 簡化的標記圖示（提升手機效能） ======
       const createCustomIcon = (index: number) => L.divIcon({
         className: 'custom-div-icon',
-        html: `<div class="custom-marker-pin transition-all duration-300"></div><div style="position: absolute; top: -45px; width: 100px; text-align: center; left: -35px; font-weight: bold; color: #4338CA; text-shadow: 0 1px 2px white; pointer-events: none;">${index + 1}</div>`,
-        iconSize: [30, 42],
-        iconAnchor: [15, 42],
-        popupAnchor: [0, -35]
+        // 簡化 HTML 結構，減少 DOM 元素
+        html: `<div class="marker-pin">${index + 1}</div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
       });
 
       const validCoords: [number, number][] = [];
@@ -442,10 +459,32 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
       )}
 
       <style>{`
+         /* 簡化的標記樣式（效能優化） */
+         .marker-pin {
+           width: 28px;
+           height: 28px;
+           background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+           border: 2px solid white;
+           border-radius: 50%;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           color: white;
+           font-size: 12px;
+           font-weight: bold;
+           box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+         }
+         
          /* Fix Z-index for mobile controls */
          .leaflet-control-zoom {
             border: none !important;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+         }
+         
+         .leaflet-control-zoom a {
+           width: 32px !important;
+           height: 32px !important;
+           line-height: 32px !important;
          }
        `}</style>
     </div>
