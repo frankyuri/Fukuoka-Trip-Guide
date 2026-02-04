@@ -148,6 +148,7 @@ export const searchNearbyRestaurants = async (
 
 // Mock data for development/fallback
 const getMockRestaurants = (lat: number, lng: number): NearbyRestaurant[] => {
+  // Generate mock locations near the provided coordinates
   return [
     {
       placeId: 'mock-1',
@@ -158,7 +159,8 @@ const getMockRestaurants = (lat: number, lng: number): NearbyRestaurant[] => {
       address: '福岡市博多区博多駅前',
       isOpen: true,
       distance: 120,
-      types: ['restaurant', 'food']
+      types: ['restaurant', 'food'],
+      location: { lat: lat + 0.001, lng: lng + 0.001 }
     },
     {
       placeId: 'mock-2', 
@@ -169,7 +171,8 @@ const getMockRestaurants = (lat: number, lng: number): NearbyRestaurant[] => {
       address: '福岡市中央区天神',
       isOpen: true,
       distance: 250,
-      types: ['restaurant', 'food']
+      types: ['restaurant', 'food'],
+      location: { lat: lat + 0.002, lng: lng - 0.001 }
     },
     {
       placeId: 'mock-3',
@@ -180,7 +183,8 @@ const getMockRestaurants = (lat: number, lng: number): NearbyRestaurant[] => {
       address: '福岡市中央区長浜',
       isOpen: false,
       distance: 380,
-      types: ['restaurant', 'food']
+      types: ['restaurant', 'food'],
+      location: { lat: lat - 0.002, lng: lng + 0.002 }
     }
   ];
 };

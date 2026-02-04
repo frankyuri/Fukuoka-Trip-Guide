@@ -173,14 +173,22 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
     }
 
     if (highlightedLocation) {
+      const { lat, lng } = highlightedLocation;
+
+      // Validate coordinates before using with Leaflet
+      if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) {
+        console.warn('Invalid highlighted location coordinates:', highlightedLocation);
+        return;
+      }
+
       // Fly to location with high zoom
-      map.flyTo([highlightedLocation.lat, highlightedLocation.lng], 17, {
+      map.flyTo([lat, lng], 17, {
         duration: 1.0,
         easeLinearity: 0.25
       });
 
       // Add a temporary highlight marker
-      highlightMarkerRef.current = L.circleMarker([highlightedLocation.lat, highlightedLocation.lng], {
+      highlightMarkerRef.current = L.circleMarker([lat, lng], {
         radius: 8,
         fillColor: '#F97316', // Orange-500
         color: '#fff',

@@ -90,8 +90,12 @@ export const NearbyRestaurants: React.FC<NearbyRestaurantsProps> = ({
                             key={restaurant.placeId}
                             onClick={(e) => { e.stopPropagation(); handleOpenMaps(restaurant); }}
                             onMouseEnter={() => {
+                                // Validate location before passing to map
                                 if (onHover && restaurant.location) {
-                                    onHover(restaurant.location);
+                                    const { lat, lng } = restaurant.location;
+                                    if (typeof lat === 'number' && typeof lng === 'number' && !isNaN(lat) && !isNaN(lng)) {
+                                        onHover(restaurant.location);
+                                    }
                                 }
                             }}
                             onMouseLeave={() => {
