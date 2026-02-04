@@ -125,22 +125,54 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
   const [activeFilter, setActiveFilter] = useState<TransportType | 'ALL'>('ALL');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
+  // ====== 載入狀態（用於顯示骨架動畫） ======
+  const [isMapLoading, setIsMapLoading] = useState(true);
+
   // Initialize Map and Layer Controls
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
-    // Create Layers
-    const standardLayer = L.tileLayer(TILE_LAYERS.Standard.url, { attribution: TILE_LAYERS.Standard.attribution });
-    const satelliteLayer = L.tileLayer(TILE_LAYERS.Satellite.url, { attribution: TILE_LAYERS.Satellite.attribution });
-    const terrainLayer = L.tileLayer(TILE_LAYERS.Terrain.url, { attribution: TILE_LAYERS.Terrain.attribution });
+    // ====== 建立圖層（使用較快的 CDN） ======
+    // 使用 updateWhenIdle 和 updateWhenZooming 優化手機效能
+    const tileOptions = {
+      attribution: TILE_LAYERS.Standard.attribution,
+      updateWhenIdle: true,        // 只在停止移動時更新磚塊
+      updateWhenZooming: false,    // 縮放時不更新（減少請求）
+      keepBuffer: 2,               // 保留周圍 2 塊磚塊的快取
+      maxZoom: 18,
+      crossOrigin: true,           // 允許快取跨域磚塊
+    };
 
+    const standardLayer = L.tileLayer(TILE_LAYERS.Standard.url, tileOptions);
+    const satelliteLayer = L.tileLayer(TILE_LAYERS.Satellite.url, {
+      ...tileOptions,
+      attribution: TILE_LAYERS.Satellite.attribution
+    });
+    const terrainLayer = L.tileLayer(TILE_LAYERS.Terrain.url, {
+      ...tileOptions,
+      attribution: TILE_LAYERS.Terrain.attribution
+    });
+
+    // ====== 建立地圖實例 ======
     const map = L.map(mapContainerRef.current, {
-      zoomControl: false, // We will add it manually to position it better for mobile
+      zoomControl: false,          // 手動設定位置
       attributionControl: false,
-      layers: [standardLayer] // Default layer
-    }).setView([33.5902, 130.4017], 13); // Default Fukuoka center
+      layers: [standardLayer],     // 預設圖層
+      preferCanvas: true,          // 使用 Canvas 渲染（比 SVG 快）
+      fadeAnimation: false,        // 關閉淡入動畫（加快顯示）
+      zoomAnimation: true,         // 保留縮放動畫
+      markerZoomAnimation: true,
+    }).setView([33.5902, 130.4017], 13); // 福岡市中心
 
     mapInstanceRef.current = map;
+
+    // ====== 監聽磚塊載入完成 ======
+    standardLayer.on('load', () => {
+      setIsMapLoading(false);
+    });
+
+    // 如果 3 秒後還沒載入完成，也隱藏 loading（避免卡住）
+    setTimeout(() => setIsMapLoading(false), 3000);
 
     // Add Controls - Position bottom-right to avoid conflict with top filters on mobile
     L.control.zoom({ position: 'bottomright' }).addTo(map);
@@ -324,7 +356,22 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, highlighted
 
   return (
     <div className="w-full h-full rounded-2xl overflow-hidden shadow-card border border-white/50 relative z-0 group">
+      {/* 地圖容器 */}
       <div ref={mapContainerRef} className="w-full h-full bg-slate-100" />
+
+      {/* ====== Loading 骨架動畫 ====== */}
+      {isMapLoading && (
+        <div className="absolute inset-0 bg-slate-100 z-[500] flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            {/* 脈動圓圈動畫 */}
+            <div className="relative">
+              <div className="w-12 h-12 border-4 border-primary-200 rounded-full animate-pulse"></div>
+              <div className="absolute inset-0 w-12 h-12 border-4 border-transparent border-t-primary-500 rounded-full animate-spin"></div>
+            </div>
+            <span className="text-sm font-medium text-slate-500">載入地圖中...</span>
+          </div>
+        </div>
+      )}
 
       {/* Custom Filter UI Overlay */}
       <div className="absolute top-4 left-4 z-[1000] flex flex-col items-start gap-2">
