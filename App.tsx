@@ -1,4 +1,5 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy, useCallback } from 'react';
+import { ItineraryItem } from './types';
 // import { ITINERARY_DATA } from './constants'; // Replaced by hook
 import { TimelineItem } from './components/TimelineItem';
 import { Footer } from './components/Footer';
@@ -87,9 +88,28 @@ const App: React.FC = () => {
   }, [activeDayIndex]);
 
   const activeDay = itinerary[activeDayIndex] || itinerary[0]; // Fallback while loading
+  const activeDayDate = activeDay?.date; // Stable ref for callbacks
 
   // Progress tracking
   const { toggleItem, isCompleted, getProgress } = useProgressTracker();
+
+  // Stable Handlers for TimelineItem
+  const handleItemUpdate = useCallback((newItem: ItineraryItem) => {
+    if (activeDayDate) {
+      updateItem(activeDayDate, newItem);
+    }
+  }, [activeDayDate, updateItem]);
+
+  const handleItemDelete = useCallback((itemId: string) => {
+    if (activeDayDate) {
+      deleteItem(activeDayDate, itemId);
+    }
+  }, [activeDayDate, deleteItem]);
+
+  const handleItemToggle = useCallback((itemId: string) => {
+    toggleItem(itemId);
+  }, [toggleItem]);
+
   // Safe check for items presence
   const dayProgress = activeDay?.items
     ? getProgress(activeDay.items.map(item => item.id))
@@ -253,14 +273,11 @@ const App: React.FC = () => {
                   onActive={setActiveItemId}
                   onRestaurantHover={setHighlightedLocation}
                   isCompleted={isCompleted(item.id)}
-                  onToggleComplete={() => toggleItem(item.id)}
+                  onToggleComplete={handleItemToggle}
                   index={index}
                   isEditing={isEditing}
-                  onUpdate={async (newItem) => {
-                    // Wrap update in async call specific for this day
-                    await updateItem(activeDay.date, newItem);
-                  }}
-                  onDelete={() => deleteItem(activeDay.date, item.id)}
+                  onUpdate={handleItemUpdate}
+                  onDelete={handleItemDelete}
                 />
               ))}
 

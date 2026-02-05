@@ -31,11 +31,88 @@ export const useItinerary = () => {
     loadData();
   }, []);
 
-  // ... (sortItemsByTime helper remains same)
+  // Helper to sort items by time
+  const sortItemsByTime = (items: ItineraryItem[]): ItineraryItem[] => {
+    return [...items].sort((a, b) => {
+      const timeTOminutes = (str: string) => {
+        const [h, m] = str.split(':').map(Number);
+        return h * 60 + m;
+      };
+      return timeTOminutes(a.time) - timeTOminutes(b.time);
+    });
+  };
 
-  // ... (updateItem remains same)
+  const updateItem = useCallback(async (dayDate: string, updatedItem: ItineraryItem) => {
+    setItinerary(prev => {
+      const newItinerary = prev.map(day => {
+        if (day.date === dayDate) {
+          const newItems = day.items.map(item =>
+            item.id === updatedItem.id ? updatedItem : item
+          );
+          // Auto-sort if time changed? Maybe confusing while typing. 
+          // Let's sort only on reload or explicit save? 
+          // For now, let's keep order stable until "save" or let it be.
+          // Actually, standard behavior is auto-sort.
+          // Yet if user changes 09:00 to 10:00, it might jump. 
+          // Let's NOT sort automatically to avoid UI jumping under cursor.
+          const newDay = { ...day, items: newItems };
+          saveDayItinerary(newDay).catch(err => console.error('Save failed:', err));
+          return newDay;
+        }
+        return day;
+      });
+      return newItinerary;
+    });
+  }, []);
 
-  // ... (addItem remains same)
+  const addItem = useCallback(async (dayDate: string) => {
+    setItinerary(prev => {
+      const newItinerary = prev.map(day => {
+        if (day.date === dayDate) {
+          const newItem: ItineraryItem = {
+            id: `item-${Date.now()}`,
+            time: '09:00', // Default
+            title: '新行程',
+            description: '',
+            address_jp: '',
+            address_en: '', // Added missing property
+            transportType: TransportType.WALK,
+            transportDetail: '步行',
+            coordinates: { lat: 33.5902, lng: 130.4017 }, // Default (Hakata Station approx)
+            googleMapsQuery: '博多駅',
+            recommendedFood: [],
+            nearbySpots: []
+          };
+          const newItems = [...day.items, newItem];
+          // We can sort here as it's a new item
+          const sortedItems = sortItemsByTime(newItems);
+          
+          const newDay = { ...day, items: sortedItems };
+          saveDayItinerary(newDay).catch(err => console.error('Save failed:', err));
+          return newDay;
+        }
+        return day;
+      });
+      return newItinerary;
+    });
+  }, []);
+
+  const deleteItem = useCallback(async (dayDate: string, itemId: string) => {
+    if (!window.confirm('確定要刪除此行程嗎？')) return;
+    
+    setItinerary(prev => {
+      const newItinerary = prev.map(day => {
+        if (day.date === dayDate) {
+          const newItems = day.items.filter(item => item.id !== itemId);
+          const newDay = { ...day, items: newItems };
+          saveDayItinerary(newDay).catch(err => console.error('Save failed:', err));
+          return newDay;
+        }
+        return day;
+      });
+      return newItinerary;
+    });
+  }, []);
 
   const addDay = useCallback(async () => {
     setItinerary(prev => {

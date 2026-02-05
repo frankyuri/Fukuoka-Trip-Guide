@@ -33,11 +33,11 @@ interface TimelineItemProps {
   onActive?: (id: string | null) => void;
   onRestaurantHover?: (location: { lat: number, lng: number } | null) => void;
   isCompleted?: boolean;
-  onToggleComplete?: () => void;
+  onToggleComplete?: (id: string) => void;
   index?: number;
   isEditing?: boolean;
   onUpdate?: (updatedItem: ItineraryItem) => void;
-  onDelete?: () => void;
+  onDelete?: (id: string) => void;
 }
 
 export const TimelineItem = React.memo<TimelineItemProps>(({
@@ -231,7 +231,7 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
           }`}
         onClick={(e) => {
           e.stopPropagation();
-          onToggleComplete?.();
+          onToggleComplete?.(item.id);
         }}
         title={isCompleted ? '標記為未完成' : '標記為已完成'}
       >
@@ -289,8 +289,8 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
                 <div className="relative flex-1">
                   <input
                     type="text"
-                    value={item.title}
-                    onChange={(e) => handleUpdate('title', e.target.value)}
+                    defaultValue={item.title}
+                    onBlur={(e) => handleUpdate('title', e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleTitleSearch();
                     }}
@@ -330,7 +330,7 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onDelete?.();
+                  onDelete?.(item.id);
                 }}
                 className="flex items-center justify-center p-1.5 rounded-full text-red-500 bg-red-50 hover:bg-red-100 border border-red-200 transition-all"
                 title="刪除行程"
@@ -405,8 +405,8 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
         <div className="mb-4 md:mb-5 pl-1">
           {isEditing ? (
             <textarea
-              value={item.description}
-              onChange={(e) => handleUpdate('description', e.target.value)}
+              defaultValue={item.description}
+              onBlur={(e) => handleUpdate('description', e.target.value)}
               className="w-full text-gray-600 text-sm md:text-base font-medium mb-3 border-l-2 border-primary-200 pl-3 py-2 leading-relaxed bg-white border border-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-primary-300 focus:border-transparent transition-all shadow-sm min-h-[80px]"
               onClick={(e) => e.stopPropagation()}
               placeholder="輸入行程說明..."
