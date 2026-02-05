@@ -32,7 +32,7 @@ const WidgetLoadingFallback = () => (
 );
 
 import { useItinerary } from './hooks/useItinerary';
-import { Pencil, Save, RotateCcw, Plus } from 'lucide-react';
+import { Pencil, Save, RotateCcw, Plus, X } from 'lucide-react';
 
 const App: React.FC = () => {
   // Use custom hook for DB data
@@ -57,6 +57,7 @@ const App: React.FC = () => {
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
   const [highlightedLocation, setHighlightedLocation] = useState<{ lat: number, lng: number } | null>(null);
   const [mobileViewMode, setMobileViewMode] = useState<'list' | 'map'>('list');
+  const [dbError, setDbError] = useState<string | null>(null);
 
   const [prevItineraryLength, setPrevItineraryLength] = useState(0);
 
@@ -86,6 +87,17 @@ const App: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setMobileViewMode('list');
   }, [activeDayIndex]);
+
+  // Database Error Listener - Global Handling
+  useEffect(() => {
+    const handleDbError = (e: CustomEvent) => {
+      setDbError(e.detail?.message || '儲存失敗');
+      setTimeout(() => setDbError(null), 5000); // Auto dismiss after 5s
+    };
+
+    window.addEventListener('db-error', handleDbError as EventListener);
+    return () => window.removeEventListener('db-error', handleDbError as EventListener);
+  }, []);
 
   const activeDay = itinerary[activeDayIndex] || itinerary[0]; // Fallback while loading
   const activeDayDate = activeDay?.date; // Stable ref for callbacks
@@ -341,8 +353,8 @@ const App: React.FC = () => {
           <button
             onClick={() => setMobileViewMode('list')}
             className={`flex flex-col items-center gap-1 p-2 rounded-xl w-24 transition-all ${mobileViewMode === 'list'
-                ? 'text-primary-600 bg-primary-50'
-                : 'text-gray-400 hover:text-gray-600'
+              ? 'text-primary-600 bg-primary-50'
+              : 'text-gray-400 hover:text-gray-600'
               }`}
           >
             <List size={22} strokeWidth={mobileViewMode === 'list' ? 2.5 : 2} />
@@ -354,8 +366,8 @@ const App: React.FC = () => {
           <button
             onClick={() => setMobileViewMode('map')}
             className={`flex flex-col items-center gap-1 p-2 rounded-xl w-24 transition-all ${mobileViewMode === 'map'
-                ? 'text-primary-600 bg-primary-50'
-                : 'text-gray-400 hover:text-gray-600'
+              ? 'text-primary-600 bg-primary-50'
+              : 'text-gray-400 hover:text-gray-600'
               }`}
           >
             <MapIcon size={22} strokeWidth={mobileViewMode === 'map' ? 2.5 : 2} />

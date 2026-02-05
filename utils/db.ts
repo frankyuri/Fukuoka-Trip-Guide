@@ -92,6 +92,13 @@ export const saveDayItinerary = async (day: DayItinerary): Promise<void> => {
     });
   } catch (error) {
     console.error('Error saving itinerary:', error);
+    // Dispatch global event for UI to catch
+    if (typeof window !== 'undefined') {
+      const event = new CustomEvent('db-error', { 
+        detail: { message: '無法儲存行程，請檢查您的瀏覽器設定 (如：隱私模式)' } 
+      });
+      window.dispatchEvent(event);
+    }
   }
 };
 

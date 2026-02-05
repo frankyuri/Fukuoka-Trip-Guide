@@ -52,13 +52,29 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ date }) => {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    // Simple in-memory cache to avoid repeated API calls
-    const cacheKey = `weather_fukuoka`;
-    const cached = (window as any).__weatherCache?.[cacheKey];
+    // LocalStorage Cache Implementation
+    const CACHE_KEY = `weather_cache_fukuoka`;
+    const CACHE_duration = 4 * 60 * 60 * 1000; // 4 hours
 
-    // Use cache if it's less than 10 minutes old
-    if (cached && Date.now() - cached.timestamp < 10 * 60 * 1000) {
-      processWeatherData(cached.data, date);
+    const getCachedWeather = () => {
+      try {
+        const stored = localStorage.getItem(CACHE_KEY);
+        if (stored) {
+          const { data, timestamp } = JSON.parse(stored);
+          if (Date.now() - timestamp < CACHE_duration) {
+            return data;
+          }
+        }
+      } catch (e) {
+        console.warn('Weather cache read error', e);
+      }
+      return null;
+    };
+
+    const cachedDt = getCachedWeather();
+    if (cachedDt) {
+      processWeatherData(cachedDt, date);
+      setLoading(false); // Ensure loading is set to false immediately if cached
       return;
     }
 
@@ -74,11 +90,15 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ date }) => {
 
         const data = await response.json();
 
-        // Cache the response
-        if (!(window as any).__weatherCache) {
-          (window as any).__weatherCache = {};
+        // Cache the response to LocalStorage
+        try {
+          localStorage.setItem(CACHE_KEY, JSON.stringify({
+            data,
+            timestamp: Date.now()
+          }));
+        } catch (e) {
+          console.warn('Weather cache write error', e);
         }
-        (window as any).__weatherCache[cacheKey] = { data, timestamp: Date.now() };
 
         processWeatherData(data, date);
       } catch (err) {
