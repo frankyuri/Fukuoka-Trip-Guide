@@ -35,7 +35,7 @@ import { Pencil, Save, RotateCcw, Plus } from 'lucide-react';
 
 const App: React.FC = () => {
   // Use custom hook for DB data
-  const { itinerary, loading, isEditing, setIsEditing, updateItem, addItem, deleteItem, resetToDefault } = useItinerary();
+  const { itinerary, loading, isEditing, setIsEditing, updateItem, addItem, deleteItem, addDay, resetToDefault } = useItinerary();
 
   // Read initial day from URL for share link support
   // ... (keep logic but use itinerary data)
@@ -57,12 +57,22 @@ const App: React.FC = () => {
   const [highlightedLocation, setHighlightedLocation] = useState<{ lat: number, lng: number } | null>(null);
   const [mobileViewMode, setMobileViewMode] = useState<'list' | 'map'>('list');
 
+  const [prevItineraryLength, setPrevItineraryLength] = useState(0);
+
   // Validate activeDayIndex when data loads
   useEffect(() => {
-    if (!loading && activeDayIndex >= itinerary.length) {
-      setActiveDayIndex(0);
+    if (!loading) {
+      // If items added (length increased), switch to last one
+      if (itinerary.length > prevItineraryLength && prevItineraryLength > 0) {
+        setActiveDayIndex(itinerary.length - 1);
+      }
+      // Safety check: if active index out of bounds (e.g. deletion), reset
+      else if (activeDayIndex >= itinerary.length) {
+        setActiveDayIndex(0);
+      }
+      setPrevItineraryLength(itinerary.length);
     }
-  }, [loading, itinerary, activeDayIndex]);
+  }, [loading, itinerary, activeDayIndex, prevItineraryLength]);
 
   // Update URL ... (Keep existing)
   useEffect(() => {
@@ -170,6 +180,19 @@ const App: React.FC = () => {
                 </button>
               );
             })}
+
+            {/* Add Day Button */}
+            {isEditing && (
+              <button
+                onClick={addDay}
+                className="snap-center flex-shrink-0 flex items-center justify-center p-3 md:p-4 min-w-[60px] md:min-w-[80px] rounded-2xl border border-white/20 bg-white/5 hover:bg-white/20 text-white/60 hover:text-white transition-all group"
+                title="新增一天"
+              >
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-dashed border-current flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Plus size={20} />
+                </div>
+              </button>
+            )}
           </div>
         </div>
       </header>
