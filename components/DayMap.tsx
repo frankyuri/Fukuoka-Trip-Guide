@@ -283,11 +283,12 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
             const isWalk = nextItem.transportType === TransportType.WALK;
 
             L.polyline([[lat, lng], [nextCoords.lat, nextCoords.lng]], {
-              color: isWalk ? '#9CA3AF' : '#6366F1', // Gray-400 for Walk, Indigo-500 for others
-              weight: isWalk ? 3 : 4,
-              opacity: 0.6,
-              dashArray: isWalk ? '5, 10' : undefined,
-              lineCap: 'round'
+              color: isWalk ? '#6B7280' : '#4F46E5', // Gray-500 (Dashed) vs Indigo-600 (Solid)
+              weight: isWalk ? 4 : 5,
+              opacity: isWalk ? 0.7 : 0.8,
+              dashArray: isWalk ? '8, 12' : undefined,
+              lineCap: 'round',
+              className: isWalk ? 'animate-dash' : ''
             }).addTo(routeLayerRef.current!);
           }
         }
@@ -567,10 +568,23 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
   }, [activeItemId]);
 
   return (
-    <div className="w-full h-full rounded-2xl overflow-hidden shadow-card border border-white/50 relative z-0 group">
-      {/* 地圖容器 */}
-      <div ref={mapContainerRef} className="w-full h-full bg-slate-100" />
+    <div className="w-full h-full relative z-0">
+      <style>{`
+        @keyframes dash {
+          to {
+            stroke-dashoffset: -20;
+          }
+        }
+        .animate-dash {
+          animation: dash 1s linear infinite;
+        }
+      `}</style>
 
+      {/* 地圖容器 */}
+      <div
+        ref={mapContainerRef}
+        className="w-full h-full rounded-3xl overflow-hidden shadow-inner bg-slate-50 relative z-0"
+      />
       {/* ====== Loading 骨架動畫 ====== */}
       {isMapLoading && (
         <div className="absolute inset-0 bg-slate-100 z-[500] flex items-center justify-center">

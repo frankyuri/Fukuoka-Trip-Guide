@@ -5,6 +5,23 @@
     "focus": "梅花滿開季節 + 天神大名區潮流購物 + 屋台體驗",
     "items": [
         {
+            "id": "d3-0",
+            "time": "08:30",
+            "title": "飯店出發",
+            "description": "Hotel WBF Grande Hakata",
+            "address_jp": "福岡市博多区博多駅南 2-2-5",
+            "address_en": "Hotel WBF Grande Hakata",
+            "coordinates": {
+                "lat": 33.5855,
+                "lng": 130.4265
+            },
+            "transportType": "WALK",
+            "transportDetail": "前往地鐵站",
+            "googleMapsQuery": "Hotel WBF Grande Hakata",
+            "recommendedFood": [],
+            "nearbySpots": []
+        },
+        {
             "id": "d3-1",
             "time": "09:00",
             "title": "太宰府天滿宮",

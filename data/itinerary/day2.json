@@ -5,6 +5,23 @@
     "focus": "【週末限定】唐戶市場壽司馬拉松 + 門司港散策",
     "items": [
         {
+            "id": "d2-0",
+            "time": "08:00",
+            "title": "飯店出發",
+            "description": "Hotel WBF Grande Hakata",
+            "address_jp": "福岡市博多区博多駅南 2-2-5",
+            "address_en": "Hotel WBF Grande Hakata",
+            "coordinates": {
+                "lat": 33.5855,
+                "lng": 130.4265
+            },
+            "transportType": "WALK",
+            "transportDetail": "前往博多車站",
+            "googleMapsQuery": "Hotel WBF Grande Hakata",
+            "recommendedFood": [],
+            "nearbySpots": []
+        },
+        {
             "id": "d2-1",
             "time": "08:30",
             "title": "移動：博多 → 門司港",
