@@ -183,6 +183,7 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
       zoomControl: false,
       attributionControl: false,
       layers: [standardLayer],
+      scrollWheelZoom: !isMobile,      // 手機上停用滾動縮放，避免卡住頁面
       // Remove preferCanvas to enable CSS animations on SVG paths
       // preferCanvas: true, 
       fadeAnimation: false,            // 關閉淡入動畫

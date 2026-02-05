@@ -19,7 +19,8 @@ import {
 } from 'lucide-react';
 import { ItineraryItem, TransportType } from '../types';
 import { TransportIcon } from './TransportIcon';
-import { NearbyRestaurants } from './NearbyRestaurants';
+// import { NearbyRestaurants } from './NearbyRestaurants'; // Refactored to Lazy Load
+const NearbyRestaurants = React.lazy(() => import('./NearbyRestaurants').then(m => ({ default: m.NearbyRestaurants })));
 import { getPlaceInsight } from '../utils/gemini';
 import { searchNearbyRestaurants, searchPlaceByName } from '../utils/places';
 import { downloadICS } from '../utils/calendar';
@@ -211,7 +212,11 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
   return (
     <div
       id={`item-${item.id}`}
-      style={{ animationDelay: `${index * 100}ms` }}
+      style={{
+        animationDelay: `${index * 100}ms`,
+        contentVisibility: 'auto', // Browser-native virtualization
+        containIntrinsicSize: '0 400px' // Placeholder height to prevent scrollbar jumping
+      } as React.CSSProperties}
       className={`relative pl-4 md:pl-8 pb-10 md:pb-12 group scroll-mt-24 md:scroll-mt-32 transition-all duration-300 ${isActive ? 'z-10' : ''} animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-backwards`}
     // Removed onMouseEnter auto-focus to prevent accidental map movements
     // onMouseEnter={() => onActive?.(item.id)}
@@ -294,7 +299,7 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleTitleSearch();
                     }}
-                    className="text-lg md:text-2xl font-black text-gray-800 leading-tight bg-white border border-gray-200 rounded-lg pl-3 pr-10 py-1 outline-none w-full focus:ring-2 focus:ring-primary-300 focus:border-transparent transition-all shadow-sm"
+                    className="text-base md:text-2xl font-black text-gray-800 leading-tight bg-white border border-gray-200 rounded-lg pl-3 pr-10 py-2 md:py-1 outline-none w-full focus:ring-2 focus:ring-primary-300 focus:border-transparent transition-all shadow-sm"
                     placeholder="輸入景點名稱..."
                     onClick={(e) => e.stopPropagation()}
                   />
@@ -407,7 +412,7 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
             <textarea
               defaultValue={item.description}
               onBlur={(e) => handleUpdate('description', e.target.value)}
-              className="w-full text-gray-600 text-sm md:text-base font-medium mb-3 border-l-2 border-primary-200 pl-3 py-2 leading-relaxed bg-white border border-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-primary-300 focus:border-transparent transition-all shadow-sm min-h-[80px]"
+              className="w-full text-base font-medium mb-3 border-l-2 border-primary-200 pl-3 py-3 md:py-2 leading-relaxed bg-white border border-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-primary-300 focus:border-transparent transition-all shadow-sm min-h-[80px]"
               onClick={(e) => e.stopPropagation()}
               placeholder="輸入行程說明..."
             />
@@ -480,14 +485,21 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
           )}
 
           {/* Nearby Restaurants */}
-          <NearbyRestaurants
-            lat={item.coordinates.lat}
-            lng={item.coordinates.lng}
-            locationName={item.title}
-            isExpanded={showNearbyRestaurants}
-            onToggle={() => setShowNearbyRestaurants(!showNearbyRestaurants)}
-            onHover={onRestaurantHover}
-          />
+          {/* Nearby Restaurants - Lazy Loaded */}
+          <React.Suspense fallback={
+            <div className="h-12 w-full bg-gray-50 rounded-lg animate-pulse flex items-center justify-center text-xs text-gray-400">
+              載入餐廳資訊元件...
+            </div>
+          }>
+            <NearbyRestaurants
+              lat={item.coordinates.lat}
+              lng={item.coordinates.lng}
+              locationName={item.title}
+              isExpanded={showNearbyRestaurants}
+              onToggle={() => setShowNearbyRestaurants(!showNearbyRestaurants)}
+              onHover={onRestaurantHover}
+            />
+          </React.Suspense>
         </div>
 
         {/* Footer: Address */}

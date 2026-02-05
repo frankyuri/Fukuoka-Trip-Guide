@@ -335,23 +335,33 @@ const App: React.FC = () => {
       </main>
 
       {/* Mobile Floating Action Button (FAB) */}
-      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 lg:hidden">
-        <button
-          onClick={() => setMobileViewMode(prev => prev === 'list' ? 'map' : 'list')}
-          className="flex items-center gap-2 bg-primary-900 text-white px-6 py-3 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all border border-white/20 backdrop-blur-md"
-        >
-          {mobileViewMode === 'list' ? (
-            <>
-              <MapIcon size={18} />
-              <span className="text-sm font-bold">地圖模式</span>
-            </>
-          ) : (
-            <>
-              <List size={18} />
-              <span className="text-sm font-bold">列表模式</span>
-            </>
-          )}
-        </button>
+      {/* Mobile Bottom Navigation Bar */}
+      <div className="fixed bottom-0 left-0 w-full z-50 bg-white/90 backdrop-blur-lg border-t border-gray-200 pb-safe lg:hidden transition-transform duration-300">
+        <div className="flex items-center justify-around p-2">
+          <button
+            onClick={() => setMobileViewMode('list')}
+            className={`flex flex-col items-center gap-1 p-2 rounded-xl w-24 transition-all ${mobileViewMode === 'list'
+                ? 'text-primary-600 bg-primary-50'
+                : 'text-gray-400 hover:text-gray-600'
+              }`}
+          >
+            <List size={22} strokeWidth={mobileViewMode === 'list' ? 2.5 : 2} />
+            <span className="text-[10px] font-bold">行程列表</span>
+          </button>
+
+          <div className="w-[1px] h-8 bg-gray-100"></div>
+
+          <button
+            onClick={() => setMobileViewMode('map')}
+            className={`flex flex-col items-center gap-1 p-2 rounded-xl w-24 transition-all ${mobileViewMode === 'map'
+                ? 'text-primary-600 bg-primary-50'
+                : 'text-gray-400 hover:text-gray-600'
+              }`}
+          >
+            <MapIcon size={22} strokeWidth={mobileViewMode === 'map' ? 2.5 : 2} />
+            <span className="text-[10px] font-bold">地圖模式</span>
+          </button>
+        </div>
       </div>
 
     </div>
