@@ -121,19 +121,45 @@ export const useItinerary = () => {
       let newDateStr = 'New Date';
 
       if (lastDay) {
+        // Parse Day Title
         const match = lastDay.dayTitle.match(/Day (\d+)/);
         if (match) {
            newDayNum = parseInt(match[1], 10) + 1;
         }
-        // Try to increment date string if possible, simplified for now
-        // Assuming format like "2/27 (五)" is hard to parse reliably without a library, 
-        // will just use a placeholder or basic string manipulation if consistent.
-        // For now: "Date TBD" to let user edit it (if we allow editing date/title).
-        // Actually, let's just default to "Day X".
+
+        // Parse Date String: "2/27 (五)"
+        const dateMatch = lastDay.date.match(/(\d+)\/(\d+)\s*\((.)\)/);
+        if (dateMatch) {
+          const month = parseInt(dateMatch[1], 10);
+          const day = parseInt(dateMatch[2], 10);
+          
+          // Create date object (Using current year or next based on month)
+          const now = new Date();
+          let year = now.getFullYear();
+          
+          // Simple logic: if month is small but we are late in year, might be next year. 
+          // But for simple "add day" flow, assuming same year as previous day usually safe 
+          // unless it's Dec->Jan.
+          // Let's rely on constructing the Date and adding 1 day.
+          
+          const lastDateObj = new Date(year, month - 1, day);
+          lastDateObj.setDate(lastDateObj.getDate() + 1);
+          
+          // Format new date
+          const newMonth = lastDateObj.getMonth() + 1;
+          const newDayVal = lastDateObj.getDate();
+          const dayOfWeekIndex = lastDateObj.getDay(); // 0 = Sun
+          const days = ['日', '一', '二', '三', '四', '五', '六'];
+          
+          newDateStr = `${newMonth}/${newDayVal} (${days[dayOfWeekIndex]})`;
+        } else {
+           // Fallback if parsing fails
+           newDateStr = `${new Date().getMonth() + 1}/${new Date().getDate()} (New)`;
+        }
       }
 
       const newDay: DayItinerary = {
-        date: `new-day-${Date.now()}`, // Unique ID for DB key
+        date: newDateStr, 
         dayTitle: `Day ${newDayNum}`,
         theme: '自由探索',
         focus: '新增的行程',

@@ -752,7 +752,9 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
       {/* ====== 底部卡片（取代 popup） ====== */}
       {(selectedItem || isShowingUserLocation) && (
         <div
-          className="absolute bottom-4 left-4 right-4 z-[1000] animate-in slide-in-from-bottom-4 fade-in duration-300"
+          // Modified bottom position to avoid overlap with bottom navigation on mobile
+          // md:bottom-4 resets it for desktop
+          className="absolute bottom-24 md:bottom-4 left-4 right-4 z-[1000] animate-in slide-in-from-bottom-4 fade-in duration-300"
         >
           <div className="bg-white rounded-xl shadow-xl border border-gray-100 p-4 relative">
             {/* 關閉按鈕 */}
@@ -765,9 +767,11 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
                 restaurantMarkersRef.current = [];
                 setNearbyRestaurants([]);
               }}
-              className="absolute top-2 right-2 p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+              // Increased touch target size
+              className="absolute top-2 right-2 p-2 rounded-full bg-gray-100/80 hover:bg-gray-200 backdrop-blur-sm transition-colors z-10"
+              aria-label="關閉卡片"
             >
-              <X size={14} className="text-gray-500" />
+              <X size={16} className="text-gray-600" />
             </button>
 
             {/* 卡片內容 */}
