@@ -144,6 +144,9 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
   const [isShowingUserLocation, setIsShowingUserLocation] = useState(false);
   const userMarkerRef = useRef<L.CircleMarker | null>(null);
 
+  // ====== 路線軌跡圖層 ======
+  const routeLayerRef = useRef<L.LayerGroup | null>(null);
+
   // Initialize Map and Layer Controls
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
@@ -238,6 +241,13 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
       markersRef.current.forEach(marker => marker.remove());
       markersRef.current.clear();
 
+      // Clear existing route lines
+      if (routeLayerRef.current) {
+        routeLayerRef.current.clearLayers();
+      } else {
+        routeLayerRef.current = L.layerGroup().addTo(map);
+      }
+
       // ====== 簡化的標記圖示（提升手機效能） ======
       const createCustomIcon = (index: number) => L.divIcon({
         className: 'custom-div-icon',
@@ -249,6 +259,7 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
 
       const validCoords: [number, number][] = [];
 
+      // Draw Routes & Markers
       items.forEach((item, index) => {
         // Apply Filter
         if (activeFilter !== 'ALL' && item.transportType !== activeFilter) {
@@ -261,6 +272,24 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
         if (!isValidCoordinate(lat, lng)) {
           console.warn(`Invalid coordinates for item: ${item.title}`, item.coordinates);
           return;
+        }
+
+        // Draw Line to Next Item (if exists and both valid)
+        if (activeFilter === 'ALL' && index < items.length - 1) {
+          const nextItem = items[index + 1];
+          const nextCoords = nextItem.coordinates;
+
+          if (nextCoords && isValidCoordinate(nextCoords.lat, nextCoords.lng)) {
+            const isWalk = nextItem.transportType === TransportType.WALK;
+
+            L.polyline([[lat, lng], [nextCoords.lat, nextCoords.lng]], {
+              color: isWalk ? '#9CA3AF' : '#6366F1', // Gray-400 for Walk, Indigo-500 for others
+              weight: isWalk ? 3 : 4,
+              opacity: 0.6,
+              dashArray: isWalk ? '5, 10' : undefined,
+              lineCap: 'round'
+            }).addTo(routeLayerRef.current!);
+          }
         }
 
         try {
