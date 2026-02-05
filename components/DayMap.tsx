@@ -13,9 +13,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as L from 'leaflet';
 import { ItineraryItem, TransportType } from '../types';
-import { Filter, X, Star, Utensils } from 'lucide-react';
+import { Filter, X, Star, Utensils, ExternalLink, MapPin } from 'lucide-react';
 import { TransportIcon, getTransportLabel } from './TransportIcon';
-import { searchNearbyRestaurants, NearbyRestaurant } from '../utils/places';
+import { searchNearbyRestaurants, NearbyRestaurant, formatDistance } from '../utils/places';
 
 // ======================================
 // 型別定義
@@ -506,22 +506,59 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
                 <p className="text-xs text-gray-500 line-clamp-1">
                   {selectedItem.address_jp}
                 </p>
-
-                {/* 餐廳狀態指示 */}
-                {isLoadingRestaurants && (
-                  <p className="text-xs text-orange-500 mt-1 flex items-center gap-1">
-                    <Utensils size={10} />
-                    搜尋附近餐廳...
-                  </p>
-                )}
-                {!isLoadingRestaurants && nearbyRestaurants.length > 0 && (
-                  <p className="text-xs text-orange-600 mt-1 flex items-center gap-1">
-                    <Utensils size={10} />
-                    找到 {nearbyRestaurants.length} 間餐廳
-                  </p>
-                )}
               </div>
             </div>
+
+            {/* 附近餐廳列表 */}
+            {isLoadingRestaurants && (
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                <p className="text-xs text-orange-500 flex items-center gap-1">
+                  <Utensils size={10} className="animate-pulse" />
+                  搜尋附近餐廳...
+                </p>
+              </div>
+            )}
+
+            {!isLoadingRestaurants && nearbyRestaurants.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-gray-100">
+                <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                  <Utensils size={10} />
+                  附近 {nearbyRestaurants.length} 間餐廳
+                </p>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {nearbyRestaurants.map((restaurant) => (
+                    <a
+                      key={restaurant.placeId}
+                      href={`https://www.google.com/maps/place/?q=place_id:${restaurant.placeId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 p-2 rounded-lg bg-orange-50 hover:bg-orange-100 transition-colors group"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-medium text-gray-800 truncate">
+                            {restaurant.name}
+                          </span>
+                          {restaurant.rating && (
+                            <span className="flex items-center gap-0.5 text-xs text-orange-600 flex-shrink-0">
+                              <Star size={10} fill="currentColor" />
+                              {restaurant.rating}
+                            </span>
+                          )}
+                        </div>
+                        {restaurant.distance && (
+                          <span className="text-xs text-gray-500 flex items-center gap-0.5">
+                            <MapPin size={8} />
+                            {formatDistance(restaurant.distance)}
+                          </span>
+                        )}
+                      </div>
+                      <ExternalLink size={12} className="text-gray-400 group-hover:text-orange-500 flex-shrink-0" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
