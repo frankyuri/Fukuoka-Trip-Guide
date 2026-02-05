@@ -289,6 +289,34 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
               lineCap: 'round',
               className: isWalk ? 'animate-dash' : ''
             }).addTo(routeLayerRef.current!);
+
+            // Calculate midpoint for icon
+            const midLat = (lat + nextCoords.lat) / 2;
+            const midLng = (lng + nextCoords.lng) / 2;
+
+            // Simple SVG icons for transport
+            const getTransportIconHtml = (type: TransportType) => {
+              const size = 14;
+              const color = type === TransportType.WALK ? '#6B7280' : '#4F46E5';
+              // Using Lucid-react like SVGs directly for simplicity in HTML string
+              if (type === TransportType.WALK) return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 11 3.8 11 8c0 1.25-.76 2.5-1.5 3.29C8.82 12 7.7 13.5 7 16" /><path d="M14 11c.88 0 2.29-.66 2.9-1.37C18.06 8.28 17.5 5 16.5 4" /><path d="M15.5 16.5 15 20" /><path d="M20 22c.5-1.5.5-2.5 0-3" /><path d="M8 22c.5-1.5.5-2.5 0-3" /></svg>`;
+              if (type === TransportType.TRAIN) return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="3" rx="2" /><path d="M6 3v1" /><path d="M18 3v1" /><path d="M8 11h8" /><path d="M8 15h8" /><path d="M9 19H6l-1 2" /><path d="M15 19h3l1 2" /></svg>`;
+              if (type === TransportType.BUS) return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6v6" /><path d="M15 6v6" /><path d="M2 12h19.6" /><path d="M18 18h3s.5-1.7.8-2.8c.1-.4-.2-.8-.6-.8h-2.4c-.4 0-.8.4-.9.8l-.4 2.8z" /><path d="M6 10V5c0-1.7 1.3-3 3-3h1" /><path d="M22 22H2" /></svg>`; // Fallback/Bus approximation
+              // Default Car/Taxi
+              return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" /><circle cx="7" cy="17" r="2" /><path d="M9 17h6" /><circle cx="17" cy="17" r="2" /></svg>`;
+            };
+
+            const transportIcon = L.divIcon({
+              className: 'transport-icon-marker',
+              html: `<div class="bg-white/90 p-1 rounded-full border border-gray-200 shadow-sm flex items-center justify-center">${getTransportIconHtml(nextItem.transportType)}</div>`,
+              iconSize: [24, 24],
+              iconAnchor: [12, 12]
+            });
+
+            L.marker([midLat, midLng], {
+              icon: transportIcon,
+              interactive: false // Don't block clicks
+            }).addTo(routeLayerRef.current!);
           }
         }
 

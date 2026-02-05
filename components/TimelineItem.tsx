@@ -30,6 +30,7 @@ interface TimelineItemProps {
   onRestaurantHover?: (location: { lat: number, lng: number } | null) => void;
   isCompleted?: boolean;
   onToggleComplete?: () => void;
+  index?: number;
 }
 
 export const TimelineItem = React.memo<TimelineItemProps>(({
@@ -39,7 +40,8 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
   onActive,
   onRestaurantHover,
   isCompleted = false,
-  onToggleComplete
+  onToggleComplete,
+  index = 0
 }) => {
   const [copied, setCopied] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
@@ -103,7 +105,8 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
   return (
     <div
       id={`item-${item.id}`}
-      className={`relative pl-4 md:pl-8 pb-10 md:pb-12 group scroll-mt-24 md:scroll-mt-32 transition-all duration-300 ${isActive ? 'z-10' : ''}`}
+      style={{ animationDelay: `${index * 100}ms` }}
+      className={`relative pl-4 md:pl-8 pb-10 md:pb-12 group scroll-mt-24 md:scroll-mt-32 transition-all duration-300 ${isActive ? 'z-10' : ''} animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-backwards`}
     // Removed onMouseEnter auto-focus to prevent accidental map movements
     // onMouseEnter={() => onActive?.(item.id)}
     // onMouseLeave={() => onActive?.(null)}

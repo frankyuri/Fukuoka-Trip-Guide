@@ -191,6 +191,7 @@ const App: React.FC = () => {
                   onRestaurantHover={setHighlightedLocation}
                   isCompleted={isCompleted(item.id)}
                   onToggleComplete={() => toggleItem(item.id)}
+                  index={index}
                 />
               ))}
             </div>
