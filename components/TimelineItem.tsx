@@ -25,6 +25,7 @@ import { ProgressCheckbox } from './ProgressTracker';
 interface TimelineItemProps {
   item: ItineraryItem;
   isLast: boolean;
+  isActive?: boolean;
   onActive?: (id: string | null) => void;
   onRestaurantHover?: (location: { lat: number, lng: number } | null) => void;
   isCompleted?: boolean;
@@ -34,6 +35,7 @@ interface TimelineItemProps {
 export const TimelineItem = React.memo<TimelineItemProps>(({
   item,
   isLast,
+  isActive = false,
   onActive,
   onRestaurantHover,
   isCompleted = false,
@@ -51,9 +53,15 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleOpenMaps = () => {
-    const query = encodeURIComponent(item.googleMapsQuery || item.address_jp);
-    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+  const handleCardClick = () => {
+    if (isActive) {
+      // Already active? Open maps
+      const query = encodeURIComponent(item.googleMapsQuery || item.address_jp);
+      window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+    } else {
+      // Not active? Set as active (focus map)
+      onActive?.(item.id);
+    }
   };
 
   const handleAiInsight = async (e: React.MouseEvent) => {
@@ -95,9 +103,10 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
   return (
     <div
       id={`item-${item.id}`}
-      className="relative pl-4 md:pl-8 pb-10 md:pb-12 group scroll-mt-24 md:scroll-mt-32 transition-all duration-300"
-      onMouseEnter={() => onActive?.(item.id)}
-      onMouseLeave={() => onActive?.(null)}
+      className={`relative pl-4 md:pl-8 pb-10 md:pb-12 group scroll-mt-24 md:scroll-mt-32 transition-all duration-300 ${isActive ? 'z-10' : ''}`}
+    // Removed onMouseEnter auto-focus to prevent accidental map movements
+    // onMouseEnter={() => onActive?.(item.id)}
+    // onMouseLeave={() => onActive?.(null)}
     >
       {/* Timeline Connector */}
       {!isLast && (
@@ -126,8 +135,9 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
 
       {/* Main Card */}
       <div
-        onClick={handleOpenMaps}
+        onClick={handleCardClick}
         className={`relative rounded-xl md:rounded-2xl shadow-sm hover:shadow-card border p-4 md:p-6 transition-all duration-300 transform md:hover:-translate-y-1 cursor-pointer group/card active:scale-[0.99]
+          ${isActive ? 'ring-2 ring-primary-400 ring-offset-2' : ''}
           ${isCompleted
             ? 'bg-green-50/50 border-green-200'
             : 'bg-white border-gray-100'
@@ -174,7 +184,11 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
               <span className="hidden md:inline">行事曆</span>
             </button>
             <div className="hidden md:flex opacity-0 group-hover/card:opacity-100 transition-opacity text-primary-400 text-xs items-center gap-1 ml-2">
-              Open Map <ArrowRight size={12} />
+              {isActive ? (
+                <>Open Map <ArrowRight size={12} /></>
+              ) : (
+                <>Click to Focus <MapPinned size={12} /></>
+              )}
             </div>
           </div>
         </div>

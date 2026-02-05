@@ -186,6 +186,7 @@ const App: React.FC = () => {
                   key={item.id}
                   item={item}
                   isLast={index === activeDay.items.length - 1}
+                  isActive={activeItemId === item.id}
                   onActive={setActiveItemId}
                   onRestaurantHover={setHighlightedLocation}
                   isCompleted={isCompleted(item.id)}
