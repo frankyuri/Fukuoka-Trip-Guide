@@ -11,7 +11,8 @@ import {
   Sparkles,
   CalendarPlus,
   Loader2,
-  X
+  X,
+  Trash2
 } from 'lucide-react';
 import { ItineraryItem, TransportType } from '../types';
 import { TransportIcon } from './TransportIcon';
@@ -31,6 +32,9 @@ interface TimelineItemProps {
   isCompleted?: boolean;
   onToggleComplete?: () => void;
   index?: number;
+  isEditing?: boolean;
+  onUpdate?: (updatedItem: ItineraryItem) => void;
+  onDelete?: () => void;
 }
 
 export const TimelineItem = React.memo<TimelineItemProps>(({
@@ -41,12 +45,26 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
   onRestaurantHover,
   isCompleted = false,
   onToggleComplete,
-  index = 0
+  index = 0,
+  isEditing = false,
+  onUpdate,
+  onDelete
 }) => {
   const [copied, setCopied] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiInsight, setAiInsight] = useState<string | null>(null);
   const [showNearbyRestaurants, setShowNearbyRestaurants] = useState(false);
+
+  // Local state helper for inputs to avoid too many re-renders up stream 
+  // actually for simplicity we might just fire onBlur (save) or onChange (controlled)
+  // Let's use direct onChange for now, it might be slow if list is huge but fine for < 10 items.
+  // Optimization: use defaultValue + onBlur to save.
+
+  const handleUpdate = (field: keyof ItineraryItem, value: string) => {
+    if (onUpdate) {
+      onUpdate({ ...item, [field]: value });
+    }
+  };
 
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -55,7 +73,12 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleCardClick = () => {
+  const handleCardClick = (e: React.MouseEvent) => { // Added event arg
+    // Prevent opening map when clicking inside inputs
+    if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') {
+      return;
+    }
+
     if (isActive) {
       // Already active? Open maps
       const query = encodeURIComponent(item.googleMapsQuery || item.address_jp);
@@ -155,18 +178,51 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
         )}
         {/* Header: Time & Title */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3">
-          <div className="flex items-start md:items-center gap-2 md:gap-3 flex-col md:flex-row">
-            <div className="flex items-center gap-1.5 text-primary-600 font-bold bg-primary-50 px-2 py-1 md:px-2.5 md:py-1 rounded-md text-xs md:text-sm whitespace-nowrap">
+          <div className="flex items-start md:items-center gap-2 md:gap-3 flex-col md:flex-row w-full"> {/* w-full for edit inputs */}
+            <div className={`flex items-center gap-1.5 text-primary-600 font-bold bg-primary-50 px-2 py-1 md:px-2.5 md:py-1 rounded-md text-xs md:text-sm whitespace-nowrap ${isEditing ? 'border border-primary-200' : ''}`}>
               <Clock size={12} className="md:w-[14px] md:h-[14px]" />
-              {item.time}
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={item.time}
+                  onChange={(e) => handleUpdate('time', e.target.value)}
+                  className="bg-transparent w-20 outline-none text-center"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              ) : (
+                item.time
+              )}
             </div>
-            <h3 className="text-lg md:text-2xl font-black text-gray-800 leading-tight">
-              {item.title}
-            </h3>
+            {isEditing ? (
+              <input
+                type="text"
+                value={item.title}
+                onChange={(e) => handleUpdate('title', e.target.value)}
+                className="text-lg md:text-2xl font-black text-gray-800 leading-tight bg-gray-50 border-b border-gray-300 outline-none w-full"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <h3 className="text-lg md:text-2xl font-black text-gray-800 leading-tight">
+                {item.title}
+              </h3>
+            )}
+
           </div>
 
           {/* Action Buttons */}
           <div className="flex items-center gap-2 mt-2 md:mt-0">
+            {isEditing && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete?.();
+                }}
+                className="flex items-center justify-center p-1.5 rounded-full text-red-500 bg-red-50 hover:bg-red-100 border border-red-200 transition-all"
+                title="刪除行程"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
             <button
               onClick={handleAiInsight}
               className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] md:text-xs font-bold border transition-all ${aiInsight
@@ -197,6 +253,7 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
         </div>
 
         {/* AI Insight Content */}
+        {/* ... (AI Insight) ... */}
         {aiInsight && (
           <div className="mb-4 bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-100 rounded-lg p-3 animate-in fade-in slide-in-from-top-2 relative">
             <button
@@ -231,9 +288,18 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
 
         {/* Description & Transport */}
         <div className="mb-4 md:mb-5 pl-1">
-          <p className="text-gray-600 text-sm md:text-base font-medium mb-3 border-l-2 border-accent-red pl-3 py-0.5 leading-relaxed">
-            {item.description}
-          </p>
+          {isEditing ? (
+            <textarea
+              value={item.description}
+              onChange={(e) => handleUpdate('description', e.target.value)}
+              className="w-full text-gray-600 text-sm md:text-base font-medium mb-3 border-l-2 border-accent-red pl-3 py-0.5 leading-relaxed bg-gray-50 border outline-none min-h-[60px]"
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <p className="text-gray-600 text-sm md:text-base font-medium mb-3 border-l-2 border-accent-red pl-3 py-0.5 leading-relaxed">
+              {item.description}
+            </p>
+          )}
 
           <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-100 text-xs font-semibold text-gray-500">
             <TransportIcon type={item.transportType} />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { ITINERARY_DATA } from './constants';
+// import { ITINERARY_DATA } from './constants'; // Replaced by hook
 import { TimelineItem } from './components/TimelineItem';
 import { Footer } from './components/Footer';
 import { WeatherWidget } from './components/WeatherWidget';
@@ -30,16 +30,24 @@ const WidgetLoadingFallback = () => (
   </div>
 );
 
+import { useItinerary } from './hooks/useItinerary';
+import { Pencil, Save, RotateCcw, Plus } from 'lucide-react';
+
 const App: React.FC = () => {
+  // Use custom hook for DB data
+  const { itinerary, loading, isEditing, setIsEditing, updateItem, addItem, deleteItem, resetToDefault } = useItinerary();
+
   // Read initial day from URL for share link support
+  // ... (keep logic but use itinerary data)
   const getInitialDayIndex = () => {
     const params = new URLSearchParams(window.location.search);
     const dayParam = params.get('day');
     if (dayParam) {
       const index = parseInt(dayParam, 10);
-      if (!isNaN(index) && index >= 0 && index < ITINERARY_DATA.length) {
-        return index;
-      }
+      // Check against loaded itinerary length later
+      // For basic init, we default to 0. 
+      // Safe to verify index validity in effect or render.
+      return index;
     }
     return 0;
   };
@@ -47,12 +55,16 @@ const App: React.FC = () => {
   const [activeDayIndex, setActiveDayIndex] = useState(getInitialDayIndex);
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
   const [highlightedLocation, setHighlightedLocation] = useState<{ lat: number, lng: number } | null>(null);
-
-  // Mobile View State: 'list' or 'map'. Default to 'list' on mobile.
-  // On Desktop, this state is ignored as we show both.
   const [mobileViewMode, setMobileViewMode] = useState<'list' | 'map'>('list');
 
-  // Update URL when day changes (for shareable links)
+  // Validate activeDayIndex when data loads
+  useEffect(() => {
+    if (!loading && activeDayIndex >= itinerary.length) {
+      setActiveDayIndex(0);
+    }
+  }, [loading, itinerary, activeDayIndex]);
+
+  // Update URL ... (Keep existing)
   useEffect(() => {
     const url = new URL(window.location.href);
     url.searchParams.set('day', activeDayIndex.toString());
@@ -60,24 +72,36 @@ const App: React.FC = () => {
   }, [activeDayIndex]);
 
   useEffect(() => {
-    // Scroll to top when day changes
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Reset view to list on day change for mobile natural flow
     setMobileViewMode('list');
   }, [activeDayIndex]);
 
-  const activeDay = ITINERARY_DATA[activeDayIndex];
+  const activeDay = itinerary[activeDayIndex] || itinerary[0]; // Fallback while loading
 
   // Progress tracking
   const { toggleItem, isCompleted, getProgress } = useProgressTracker();
-  const dayProgress = getProgress(activeDay.items.map(item => item.id));
+  // Safe check for items presence
+  const dayProgress = activeDay?.items
+    ? getProgress(activeDay.items.map(item => item.id))
+    : { completed: 0, total: 0 };
+
+  if (loading || !activeDay) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-surface-50">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="animate-spin text-primary-500" size={40} />
+          <p className="text-slate-500 font-medium">載入行程資料庫中...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen font-sans bg-surface-50 text-slate-800 pb-20 md:pb-12">
 
       {/* Immersive Hero Header */}
       <header className="relative bg-gradient-to-br from-primary-800 via-primary-900 to-sakura-500/30 text-white overflow-hidden pb-8 md:pb-12 rounded-b-[32px] md:rounded-b-[40px] shadow-2xl z-20">
-        {/* Abstract Background Shapes */}
+        {/* ... Background Shapes ... */}
         <div className="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none">
           <div className="absolute top-[-20%] left-[-10%] w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-sakura-400 rounded-full blur-[80px] md:blur-[100px] animate-pulse-slow"></div>
           <div className="absolute bottom-[-20%] right-[-10%] w-[250px] h-[250px] md:w-[400px] md:h-[400px] bg-sunset-coral rounded-full blur-[80px] md:blur-[100px] animate-pulse-slow"></div>
@@ -85,6 +109,29 @@ const App: React.FC = () => {
         </div>
 
         <div className="relative z-10 max-w-4xl mx-auto px-6 pt-12 md:pt-20 text-center">
+
+          {/* Top Controls: Edit Mode & Reset */}
+          <div className="absolute top-6 right-6 flex gap-2">
+            {isEditing && (
+              <button
+                onClick={resetToDefault}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-500/20 backdrop-blur-md border border-red-400/30 text-xs font-bold text-white hover:bg-red-500/40 transition-all"
+              >
+                <RotateCcw size={12} /> 還原預設
+              </button>
+            )}
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full backdrop-blur-md border border-white/30 text-xs font-bold transition-all shadow-lg ${isEditing
+                ? 'bg-yellow-400 text-yellow-900 hover:bg-yellow-300'
+                : 'bg-white/10 text-white hover:bg-white/20'
+                }`}
+            >
+              {isEditing ? <Save size={14} /> : <Pencil size={14} />}
+              {isEditing ? '完成編輯' : '編輯行程'}
+            </button>
+          </div>
+
           <div className="inline-flex items-center gap-2 px-3 py-1 md:px-4 md:py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/30 text-[10px] md:text-xs font-bold tracking-widest uppercase mb-4 md:mb-6 shadow-glow-pink">
             <Plane size={12} className="text-sakura-300" /> 2025 Fukuoka Trip
           </div>
@@ -97,10 +144,10 @@ const App: React.FC = () => {
           </p>
         </div>
 
-        {/* Day Selector - Horizontal Scroll on Mobile */}
+        {/* Day Selector */}
         <div className="relative z-20 px-4 max-w-5xl mx-auto mt-2 md:mt-4">
           <div className="flex gap-3 md:justify-center overflow-x-auto no-scrollbar pb-2 px-2 snap-x snap-mandatory">
-            {ITINERARY_DATA.map((day, index) => {
+            {itinerary.map((day, index) => {
               const isActive = activeDayIndex === index;
               return (
                 <button
@@ -117,7 +164,6 @@ const App: React.FC = () => {
                   <span className={`text-lg md:text-xl font-bold ${isActive ? 'text-primary-800' : 'text-white'}`}>
                     {day.dayTitle}
                   </span>
-                  {/* Active Indicator Dot */}
                   {isActive && (
                     <div className="absolute top-3 right-3 w-2 h-2 bg-gradient-to-r from-sakura-400 to-sunset-coral rounded-full animate-pulse shadow-glow-pink"></div>
                   )}
@@ -144,13 +190,11 @@ const App: React.FC = () => {
             </p>
           </div>
 
-          {/* Weather & Share */}
           <div className="flex items-center gap-3 flex-wrap justify-center">
             <WeatherWidget date={activeDay.date} />
             <ShareButton dayIndex={activeDayIndex} dayTitle={activeDay.dayTitle} />
           </div>
 
-          {/* Day Progress Bar */}
           <div className="w-full max-w-md">
             <DayProgressBar
               completed={dayProgress.completed}
@@ -159,11 +203,11 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Countdown & Emergency Info - Only show on first day or when trip is upcoming */}
+        {/* Countdown & Emergency Info */}
         {activeDayIndex === 0 && (
           <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
             <Suspense fallback={<WidgetLoadingFallback />}>
-              <CountdownWidget tripStartDate={ITINERARY_DATA[0].date} />
+              <CountdownWidget tripStartDate={itinerary[0].date} />
             </Suspense>
             <Suspense fallback={<WidgetLoadingFallback />}>
               <EmergencyInfo />
@@ -171,14 +215,10 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {/* 
-          Split View Container 
-          - Mobile: Toggles between Map/List using `mobileViewMode`
-          - Desktop: Always split view (flex-row)
-        */}
+        {/* Split View Container */}
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 relative">
 
-          {/* Left: Timeline (Visible on Desktop OR when Mobile View is 'list') */}
+          {/* Left: Timeline */}
           <div className={`order-2 lg:order-1 lg:w-3/5 ${mobileViewMode === 'map' ? 'hidden lg:block' : 'block'}`}>
             <div className="relative md:px-4">
               {activeDay.items.map((item, index) => (
@@ -192,11 +232,26 @@ const App: React.FC = () => {
                   isCompleted={isCompleted(item.id)}
                   onToggleComplete={() => toggleItem(item.id)}
                   index={index}
+                  isEditing={isEditing}
+                  onUpdate={async (newItem) => {
+                    // Wrap update in async call specific for this day
+                    await updateItem(activeDay.date, newItem);
+                  }}
+                  onDelete={() => deleteItem(activeDay.date, item.id)}
                 />
               ))}
+
+              {isEditing && (
+                <button
+                  onClick={() => addItem(activeDay.date)}
+                  className="w-full py-4 mt-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-400 font-bold flex items-center justify-center gap-2 hover:border-primary-400 hover:text-primary-500 hover:bg-primary-50 transition-all"
+                >
+                  <Plus size={20} />
+                  新增行程
+                </button>
+              )}
             </div>
 
-            {/* Currency Widget - At bottom of timeline */}
             <div className="mt-8 px-4">
               <Suspense fallback={<WidgetLoadingFallback />}>
                 <CurrencyWidget />
@@ -206,10 +261,10 @@ const App: React.FC = () => {
             <Footer />
           </div>
 
-          {/* Right: Map (Visible on Desktop OR when Mobile View is 'map') */}
+          {/* Right: Map */}
           <div className={`order-1 lg:order-2 lg:w-2/5 ${mobileViewMode === 'list' ? 'hidden lg:block' : 'block'}`}>
 
-            {/* Desktop Layout: Sticky Sidebar with Map + Widget */}
+            {/* Desktop Layout: Sticky Sidebar */}
             <div className={`
               flex flex-col gap-4
               ${mobileViewMode === 'map'
@@ -217,7 +272,7 @@ const App: React.FC = () => {
                 : 'lg:sticky lg:top-8 lg:h-[calc(100vh-60px)]'}
             `}>
 
-              {/* Map Container - Grows to fill space */}
+              {/* Map Container */}
               <div className="flex-grow w-full rounded-3xl shadow-float overflow-hidden relative min-h-[300px]">
                 <Suspense fallback={<MapLoadingFallback />}>
                   <DayMap
@@ -228,22 +283,18 @@ const App: React.FC = () => {
                 </Suspense>
               </div>
 
-              {/* Mobile-only Hint */}
               {mobileViewMode === 'map' && (
                 <p className="text-center text-xs text-slate-400 lg:hidden">
                   點擊地標查看詳情，或切換回列表模式瀏覽行程
                 </p>
               )}
-
-
-
             </div>
           </div>
 
         </div>
       </main>
 
-      {/* Mobile Floating Action Button (FAB) for View Toggle */}
+      {/* Mobile Floating Action Button (FAB) */}
       <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 lg:hidden">
         <button
           onClick={() => setMobileViewMode(prev => prev === 'list' ? 'map' : 'list')}
