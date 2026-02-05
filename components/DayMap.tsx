@@ -141,6 +141,7 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
   // ====== 使用者定位 ======
   const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
   const [isLocating, setIsLocating] = useState(false);
+  const [isShowingUserLocation, setIsShowingUserLocation] = useState(false);
   const userMarkerRef = useRef<L.CircleMarker | null>(null);
 
   // Initialize Map and Layer Controls
@@ -270,6 +271,7 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
           marker.on('click', async () => {
             // 設定選中的項目（觸發底部卡片顯示）
             setSelectedItem(item);
+            setIsShowingUserLocation(false); // 關閉使用者位置模式
 
             // 清除之前的餐廳標記
             restaurantMarkersRef.current.forEach(m => m.remove());
@@ -449,15 +451,63 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
     setIsLocating(true);
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude } = position.coords;
-        setUserLocation({ lat: latitude, lng: longitude });
+        const coords = { lat: latitude, lng: longitude };
+
+        setUserLocation(coords);
         setIsLocating(false);
+        setIsShowingUserLocation(true);
+        setSelectedItem(null); // 清除選中的行程項目
 
         // Pan to user location
-        mapInstanceRef.current?.flyTo([latitude, longitude], 15, {
+        mapInstanceRef.current?.flyTo([latitude, longitude], 16, {
           duration: 1.5
         });
+
+        // ====== 搜尋附近餐廳 ======
+        setIsLoadingRestaurants(true);
+        // 清除舊標記
+        restaurantMarkersRef.current.forEach(m => m.remove());
+        restaurantMarkersRef.current = [];
+        setNearbyRestaurants([]);
+
+        try {
+          const result = await searchNearbyRestaurants(latitude, longitude, 500);
+          if (!result.apiUnavailable && result.restaurants.length > 0) {
+            setNearbyRestaurants(result.restaurants.slice(0, 10)); // 顯示更多附近餐廳
+
+            const map = mapInstanceRef.current;
+            if (map) {
+              result.restaurants.slice(0, 10).forEach((restaurant) => {
+                if (!restaurant.location) return;
+
+                const restaurantIcon = L.divIcon({
+                  className: 'restaurant-marker-icon',
+                  html: `
+                    <div class="restaurant-pin">
+                      <span class="restaurant-name">${restaurant.name.slice(0, 8)}${restaurant.name.length > 8 ? '...' : ''}</span>
+                      ${restaurant.rating ? `<span class="restaurant-rating">★${restaurant.rating}</span>` : ''}
+                    </div>
+                  `,
+                  iconSize: [80, 40],
+                  iconAnchor: [40, 40],
+                });
+
+                const marker = L.marker(
+                  [restaurant.location.lat, restaurant.location.lng],
+                  { icon: restaurantIcon }
+                ).addTo(map);
+
+                restaurantMarkersRef.current.push(marker);
+              });
+            }
+          }
+        } catch (err) {
+          console.error('Failed to fetch nearby restaurants for user location:', err);
+        } finally {
+          setIsLoadingRestaurants(false);
+        }
       },
       (error) => {
         console.error('Error getting location:', error);
@@ -547,10 +597,10 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
         <button
           onClick={handleLocateMe}
           className={`p-2.5 rounded-full shadow-md transition-all flex items-center justify-center ${isLocating
-              ? 'bg-primary-50 text-primary-600 animate-pulse'
-              : userLocation
-                ? 'bg-white text-blue-500 hover:bg-gray-50'
-                : 'bg-white text-gray-600 hover:bg-gray-50'
+            ? 'bg-primary-50 text-primary-600 animate-pulse'
+            : userLocation
+              ? 'bg-white text-blue-500 hover:bg-gray-50'
+              : 'bg-white text-gray-600 hover:bg-gray-50'
             }`}
           title="定位我的位置"
         >
@@ -559,7 +609,7 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
       </div>
 
       {/* ====== 底部卡片（取代 popup） ====== */}
-      {selectedItem && (
+      {(selectedItem || isShowingUserLocation) && (
         <div
           className="absolute bottom-4 left-4 right-4 z-[1000] animate-in slide-in-from-bottom-4 fade-in duration-300"
         >
@@ -568,6 +618,7 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
             <button
               onClick={() => {
                 setSelectedItem(null);
+                setIsShowingUserLocation(false);
                 // 清除餐廳標記
                 restaurantMarkersRef.current.forEach(m => m.remove());
                 restaurantMarkersRef.current = [];
@@ -580,23 +631,29 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
 
             {/* 卡片內容 */}
             <div className="flex items-start gap-3 pr-6">
-              {/* 時間標籤 */}
+              {/* 時間標籤 / 位置圖示 */}
               <div className="flex-shrink-0">
-                <div className="inline-block px-2.5 py-1 rounded-lg bg-primary-50 text-primary-700 text-xs font-bold border border-primary-100">
-                  {selectedItem.time}
-                </div>
+                {isShowingUserLocation ? (
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                    <Navigation size={16} className="fill-blue-600" />
+                  </div>
+                ) : (
+                  <div className="inline-block px-2.5 py-1 rounded-lg bg-primary-50 text-primary-700 text-xs font-bold border border-primary-100">
+                    {selectedItem?.time}
+                  </div>
+                )}
               </div>
 
               {/* 資訊區 */}
               <div className="flex-1 min-w-0">
                 <h4 className="font-bold text-gray-800 text-sm mb-1 truncate">
-                  {selectedItem.title}
+                  {isShowingUserLocation ? '你的目前位置' : selectedItem?.title}
                 </h4>
                 <p className="text-xs text-gray-500 line-clamp-1">
-                  {selectedItem.address_jp}
+                  {isShowingUserLocation ? '正在搜尋附近的餐廳...' : selectedItem?.address_jp}
                 </p>
-                {/* 距離資訊 */}
-                {userLocation && selectedItem.coordinates && (
+                {/* 距離資訊 - 只在選中景點時顯示 */}
+                {!isShowingUserLocation && userLocation && selectedItem?.coordinates && (
                   <p className="text-xs text-blue-600 mt-1 flex items-center gap-1 font-medium">
                     <Navigation size={10} />
                     距離你 {formatDistance(calculateDistance(
