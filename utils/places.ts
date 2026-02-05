@@ -25,6 +25,7 @@ export interface NearbyRestaurant {
   priceLevel?: number;                          // 價格等級（1-4）
   address: string;                              // 地址
   isOpen?: boolean;                             // 是否營業中
+  todayHours?: string;                          // 當天營業時間（如 "11:00 - 22:00"）
   distance?: number;                            // 距離（公尺）
   photoUrl?: string;                            // 照片 URL
   types: string[];                              // 類型標籤（如 restaurant, cafe）
@@ -219,39 +220,63 @@ export const searchNearbyRestaurants = async (
         // 搜尋成功且有結果
         if (status === google.maps.places.PlacesServiceStatus.OK && results) {
           
+          // 取得今天是星期幾（0 = 週日, 1 = 週一, ...）
+          const today = new Date().getDay();
+          // Google Places API 的 weekday_text 順序是週一(0)到週日(6)
+          // 轉換：JS 的 0(Sun) -> API 的 6, JS 的 1(Mon) -> API 的 0, ...
+          const apiDayIndex = today === 0 ? 6 : today - 1;
+          
           // 轉換 API 回傳的資料格式
-          const restaurants: NearbyRestaurant[] = results.slice(0, 10).map((place: any) => ({
-            placeId: place.place_id,
-            name: place.name,
-            rating: place.rating,
-            userRatingsTotal: place.user_ratings_total,
-            priceLevel: place.price_level,
-            address: place.vicinity || '',
-            
-            // 判斷是否營業中（API 可能用函數或屬性回傳）
-            isOpen: place.opening_hours 
-              ? (typeof place.opening_hours.isOpen === 'function' 
-                  ? place.opening_hours.isOpen() 
-                  : place.opening_hours.open_now) 
-              : undefined,
-            
-            // 計算與搜尋中心點的距離
-            distance: calculateDistance(
-              lat, lng, 
-              place.geometry.location.lat(), 
-              place.geometry.location.lng()
-            ),
-            
-            // 取得第一張照片的 URL
-            photoUrl: place.photos?.[0]?.getUrl({ maxWidth: 200 }),
-            types: place.types || [],
-            
-            // 餐廳座標（用於地圖標記）
-            location: {
-              lat: place.geometry.location.lat(),
-              lng: place.geometry.location.lng()
+          const restaurants: NearbyRestaurant[] = results.slice(0, 10).map((place: any) => {
+            // 解析當天營業時間
+            let todayHours: string | undefined;
+            if (place.opening_hours?.weekday_text) {
+              const todayText = place.opening_hours.weekday_text[apiDayIndex];
+              if (todayText) {
+                // 格式通常是 "星期一: 11:00 – 22:00" 或 "Monday: 11:00 AM – 10:00 PM"
+                const colonIndex = todayText.indexOf(':');
+                if (colonIndex !== -1) {
+                  todayHours = todayText.substring(colonIndex + 1).trim();
+                }
+              }
             }
-          }));
+            
+            return {
+              placeId: place.place_id,
+              name: place.name,
+              rating: place.rating,
+              userRatingsTotal: place.user_ratings_total,
+              priceLevel: place.price_level,
+              address: place.vicinity || '',
+              
+              // 判斷是否營業中（API 可能用函數或屬性回傳）
+              isOpen: place.opening_hours 
+                ? (typeof place.opening_hours.isOpen === 'function' 
+                    ? place.opening_hours.isOpen() 
+                    : place.opening_hours.open_now) 
+                : undefined,
+              
+              // 當天營業時間
+              todayHours,
+              
+              // 計算與搜尋中心點的距離
+              distance: calculateDistance(
+                lat, lng, 
+                place.geometry.location.lat(), 
+                place.geometry.location.lng()
+              ),
+              
+              // 取得第一張照片的 URL
+              photoUrl: place.photos?.[0]?.getUrl({ maxWidth: 200 }),
+              types: place.types || [],
+              
+              // 餐廳座標（用於地圖標記）
+              location: {
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng()
+              }
+            };
+          });
 
           // 按距離排序（近的在前）
           restaurants.sort((a, b) => (a.distance || 0) - (b.distance || 0));

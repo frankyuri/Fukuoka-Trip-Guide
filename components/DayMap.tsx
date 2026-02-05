@@ -535,7 +535,7 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
                       className="flex items-center gap-2 p-2 rounded-lg bg-orange-50 hover:bg-orange-100 transition-colors group"
                     >
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-xs font-medium text-gray-800 truncate">
                             {restaurant.name}
                           </span>
@@ -545,13 +545,30 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
                               {restaurant.rating}
                             </span>
                           )}
+                          {/* 營業狀態標籤 */}
+                          {restaurant.isOpen !== undefined && (
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${restaurant.isOpen
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-red-100 text-red-600'
+                              }`}>
+                              {restaurant.isOpen ? '營業中' : '休息中'}
+                            </span>
+                          )}
                         </div>
-                        {restaurant.distance && (
-                          <span className="text-xs text-gray-500 flex items-center gap-0.5">
-                            <MapPin size={8} />
-                            {formatDistance(restaurant.distance)}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                          {restaurant.distance && (
+                            <span className="text-xs text-gray-500 flex items-center gap-0.5">
+                              <MapPin size={8} />
+                              {formatDistance(restaurant.distance)}
+                            </span>
+                          )}
+                          {/* 當天營業時間 */}
+                          {restaurant.todayHours && (
+                            <span className="text-[10px] text-gray-400">
+                              今日 {restaurant.todayHours}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <ExternalLink size={12} className="text-gray-400 group-hover:text-orange-500 flex-shrink-0" />
                     </a>
