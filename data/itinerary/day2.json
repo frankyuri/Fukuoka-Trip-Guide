@@ -7,8 +7,8 @@
         {
             "id": "d2-0",
             "time": "08:00",
-            "title": "飯店出發",
-            "description": "Hotel WBF Grande Hakata",
+            "title": "Hotel WBF Grande Hakata",
+            "description": "飯店出發，前往博多車站",
             "address_jp": "福岡市博多区博多駅南 2-2-5",
             "address_en": "Hotel WBF Grande Hakata",
             "coordinates": {
@@ -24,8 +24,8 @@
         {
             "id": "d2-1",
             "time": "08:30",
-            "title": "移動：博多 → 門司港",
-            "description": "鐵道旅行與沿途風景",
+            "title": "門司港駅",
+            "description": "移動：博多 → 門司港 (鐵道旅行與沿途風景)",
             "address_jp": "福岡県北九州市門司区西海岸1-5-31",
             "address_en": "Mojiko Station",
             "coordinates": {
@@ -139,8 +139,8 @@
         {
             "id": "d2-5",
             "time": "19:00",
-            "title": "博多/天神 晚餐",
-            "description": "福岡靈魂美食：牛腸鍋或水炊鍋",
+            "title": "博多 華味鳥",
+            "description": "博多/天神 晚餐 (福岡靈魂美食：牛腸鍋或水炊鍋)",
             "address_jp": "福岡市博多区博多駅前3-23-17",
             "address_en": "Hakata Hanamidori / Echigoya",
             "coordinates": {

@@ -37,8 +37,8 @@
         {
             "id": "d4-2",
             "time": "09:30",
-            "title": "回飯店拿行李",
-            "description": "整理戰利品準備出發",
+            "title": "Hotel WBF Grande Hakata",
+            "description": "回飯店拿行李，整理戰利品準備出發",
             "address_jp": "福岡市博多区博多駅南 2-2-5",
             "address_en": "Hotel WBF Grande Hakata",
             "coordinates": {
@@ -58,8 +58,8 @@
         {
             "id": "d4-3",
             "time": "09:45",
-            "title": "出發前往機場",
-            "description": "前往福岡機場國際線航廈",
+            "title": "福岡空港 国際線ターミナル",
+            "description": "出發前往機場",
             "address_jp": "福岡空港 国際線ターミナル",
             "address_en": "Fukuoka Airport Int'l Terminal",
             "coordinates": {
@@ -79,7 +79,7 @@
         {
             "id": "d4-4",
             "time": "10:15",
-            "title": "機場免稅店",
+            "title": "福岡空港 免稅店",
             "description": "最後衝刺：明太子與小雞饅頭",
             "address_jp": "福岡空港",
             "address_en": "Duty Free Area",

@@ -7,8 +7,8 @@
         {
             "id": "d1-1",
             "time": "07:30",
-            "title": "前往飯店寄放行李",
-            "description": "Hotel WBF Grande Hakata 外觀",
+            "title": "Hotel WBF Grande Hakata",
+            "description": "前往飯店寄放行李 / 外觀",
             "address_jp": "福岡市博多区博多駅南 2-2-5",
             "address_en": "Hotel WBF Grande Hakata",
             "coordinates": {
@@ -98,8 +98,8 @@
         {
             "id": "d1-4",
             "time": "15:00",
-            "title": "飯店 Check-in & 梳洗",
-            "description": "享受飯店大浴場與短暫補眠",
+            "title": "Hotel WBF Grande Hakata",
+            "description": "Check-in & 梳洗，享受飯店大浴場與短暫補眠",
             "address_jp": "福岡市博多区博多駅南 2-2-5",
             "address_en": "Hotel WBF Grande Hakata",
             "coordinates": {

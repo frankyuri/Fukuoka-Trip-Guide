@@ -7,8 +7,8 @@
         {
             "id": "d3-0",
             "time": "08:30",
-            "title": "飯店出發",
-            "description": "Hotel WBF Grande Hakata",
+            "title": "Hotel WBF Grande Hakata",
+            "description": "飯店出發，前往地鐵站",
             "address_jp": "福岡市博多区博多駅南 2-2-5",
             "address_en": "Hotel WBF Grande Hakata",
             "coordinates": {
@@ -61,8 +61,8 @@
         {
             "id": "d3-2",
             "time": "12:00",
-            "title": "暖暮拉麵 / 一蘭",
-            "description": "太宰府站前的熱門豚骨拉麵",
+            "title": "暖暮 太宰府駅前店",
+            "description": "太宰府站前的熱門豚骨拉麵 / 一蘭",
             "address_jp": "太宰府市宰府1-14-24",
             "address_en": "Ramen shops near station",
             "coordinates": {
