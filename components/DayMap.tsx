@@ -183,7 +183,8 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
       zoomControl: false,
       attributionControl: false,
       layers: [standardLayer],
-      preferCanvas: true,              // Canvas 渲染（比 SVG 快）
+      // Remove preferCanvas to enable CSS animations on SVG paths
+      // preferCanvas: true, 
       fadeAnimation: false,            // 關閉淡入動畫
       zoomAnimation: !isMobile,        // 手機上關閉縮放動畫
       markerZoomAnimation: !isMobile,  // 手機上關閉標記動畫
@@ -192,11 +193,9 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
       tapTolerance: 15,                // 觸控容差
       touchZoom: true,
       bounceAtZoomLimits: false,       // 關閉縮放邊界彈跳
-      // 關閉慣性滾動（省電）
-      inertia: !isMobile,
-      inertiaDeceleration: 3000,
-      // 減少重繪
-      renderer: L.canvas({ padding: 0.5 }),
+
+      // Remove explicit Canvas renderer
+      // renderer: L.canvas({ padding: 0.5 }),
     }).setView([33.5902, 130.4017], 13);
 
     mapInstanceRef.current = map;
@@ -578,6 +577,70 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
         .animate-dash {
           animation: dash 1s linear infinite;
         }
+        
+        /* 簡化的標記樣式（效能優化） */
+        .marker-pin {
+          width: 28px;
+          height: 28px;
+          background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+          border: 2px solid white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-size: 12px;
+          font-weight: bold;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        /* 餐廳標記樣式 */
+        .restaurant-marker-icon {
+          background: transparent;
+        }
+        .restaurant-pin {
+          background: white;
+          border: 1px solid #F97316;
+          border-radius: 8px;
+          padding: 4px 8px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          white-space: nowrap;
+          transform: translateY(-100%);
+          position: relative;
+        }
+        .restaurant-pin::after {
+          content: '';
+          position: absolute;
+          bottom: -5px;
+          left: 50%;
+          transform: translateX(-50%);
+          border-left: 5px solid transparent;
+          border-right: 5px solid transparent;
+          border-top: 5px solid #F97316;
+        }
+        .restaurant-name {
+          font-weight: bold;
+          color: #C2410C;
+          font-size: 10px;
+        }
+        .restaurant-rating {
+          font-size: 9px;
+          color: #F59E0B;
+        }
+
+        /* Fix Z-index for mobile controls */
+        .leaflet-control-zoom {
+          border: none !important;
+          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+        }
+        .leaflet-control-zoom a {
+          width: 32px !important;
+          height: 32px !important;
+          line-height: 32px !important;
+        }
       `}</style>
 
       {/* 地圖容器 */}
@@ -781,68 +844,7 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
         </div>
       )}
 
-      <style>{`
-         /* 簡化的標記樣式（效能優化） */
-         .marker-pin {
-           width: 28px;
-           height: 28px;
-           background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
-           border: 2px solid white;
-           border-radius: 50%;
-           display: flex;
-           align-items: center;
-           justify-content: center;
-           color: white;
-           font-size: 12px;
-           font-weight: bold;
-           box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-         }
-         
-         /* 餐廳標記樣式 */
-         .restaurant-marker-icon {
-           pointer-events: none;
-         }
-         
-         .restaurant-pin {
-           display: flex;
-           flex-direction: column;
-           align-items: center;
-           gap: 2px;
-           background: rgba(251, 146, 60, 0.95);
-           padding: 4px 8px;
-           border-radius: 8px;
-           border: 1px solid white;
-           box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-           white-space: nowrap;
-         }
-         
-         .restaurant-name {
-           font-size: 10px;
-           font-weight: 600;
-           color: white;
-           max-width: 70px;
-           overflow: hidden;
-           text-overflow: ellipsis;
-         }
-         
-         .restaurant-rating {
-           font-size: 9px;
-           color: #FFFBEB;
-           font-weight: 500;
-         }
-         
-         /* Fix Z-index for mobile controls */
-         .leaflet-control-zoom {
-            border: none !important;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
-         }
-         
-         .leaflet-control-zoom a {
-           width: 32px !important;
-           height: 32px !important;
-           line-height: 32px !important;
-         }
-       `}</style>
-    </div>
+
+    </div >
   );
 });
