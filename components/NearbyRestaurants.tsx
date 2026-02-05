@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Star, MapPin, Clock, ChevronDown, ChevronUp, Loader2, Navigation, ExternalLink, AlertCircle } from 'lucide-react';
 import { searchNearbyRestaurants, formatPriceLevel, formatDistance, NearbyRestaurant } from '../utils/places';
 
@@ -23,6 +23,7 @@ export const NearbyRestaurants: React.FC<NearbyRestaurantsProps> = ({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [apiUnavailable, setApiUnavailable] = useState(false);
+    const hoverTimeout = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         if (isExpanded && restaurants.length === 0 && !apiUnavailable) {
@@ -112,15 +113,28 @@ export const NearbyRestaurants: React.FC<NearbyRestaurantsProps> = ({
                             key={restaurant.placeId}
                             onClick={(e) => { e.stopPropagation(); handleOpenMaps(restaurant); }}
                             onMouseEnter={() => {
-                                // Validate location before passing to map
-                                if (onHover && restaurant.location) {
-                                    const { lat, lng } = restaurant.location;
-                                    if (typeof lat === 'number' && typeof lng === 'number' && !isNaN(lat) && !isNaN(lng)) {
-                                        onHover(restaurant.location);
-                                    }
+                                // Clear any pending hover clears
+                                if (hoverTimeout.current) {
+                                    clearTimeout(hoverTimeout.current);
                                 }
+
+                                // Debounce the hover event (100ms)
+                                hoverTimeout.current = setTimeout(() => {
+                                    if (onHover && restaurant.location) {
+                                        const { lat, lng } = restaurant.location;
+                                        if (typeof lat === 'number' && typeof lng === 'number' && !isNaN(lat) && !isNaN(lng)) {
+                                            onHover(restaurant.location);
+                                        }
+                                    }
+                                }, 100);
                             }}
                             onMouseLeave={() => {
+                                if (hoverTimeout.current) {
+                                    clearTimeout(hoverTimeout.current);
+                                }
+
+                                // Immediate clear or short debounce for clearing? 
+                                // Immediate clear feels snappier when moving away
                                 if (onHover) {
                                     onHover(null);
                                 }

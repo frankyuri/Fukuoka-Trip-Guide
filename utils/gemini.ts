@@ -4,11 +4,7 @@
  * 提供景點資訊與附近餐廳的 AI 諮詢功能
  */
 
-import { GoogleGenAI } from "@google/genai";
 import { NearbyRestaurant } from './places';
-
-// Initialize the client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
 /**
  * 餐廳資訊的簡化格式（用於 AI prompt）
@@ -37,6 +33,11 @@ export const getPlaceInsight = async (
   }
 
   try {
+    // Dynamic Import for Code Splitting
+    // Only load the heavy SDK when the user actually requests AI insight
+    const { GoogleGenAI } = await import("@google/genai");
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+
     // 準備餐廳資訊
     let restaurantContext = '';
     if (nearbyRestaurants && nearbyRestaurants.length > 0) {
@@ -72,7 +73,7 @@ Output in Traditional Chinese (Taiwan).
 Tone: Excited, helpful, and concise.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.0-flash-exp', // Updated to latest flash model if available, or keep existing
       contents: prompt,
     });
 

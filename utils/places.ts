@@ -82,17 +82,78 @@ export const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2
 // ======================================
 
 /**
- * 餐廳搜尋結果的快取
- * Key: "lat,lng,radius" 格式
- * Value: { data: 搜尋結果, timestamp: 快取時間 }
+ * 餐廳搜尋結果的快取介面
  */
-const restaurantCache = new Map<string, { data: NearbyRestaurantsResult, timestamp: number }>();
+interface CacheEntry {
+  data: NearbyRestaurantsResult;
+  timestamp: number;
+}
 
 /**
- * 快取有效期限（10 分鐘）
- * 超過這個時間的快取會被視為過期
+ * 記憶體快取 (Level 1)
  */
-const CACHE_DURATION = 10 * 60 * 1000;
+const memoryCache = new Map<string, CacheEntry>();
+
+/**
+ * 快取有效期限（24 小時）- 延長快取時間以節省 API
+ */
+const CACHE_DURATION = 24 * 60 * 60 * 1000;
+
+/**
+ * LocalStorage Key Prefix
+ */
+const CACHE_PREFIX = 'fuka_places_cache_';
+
+/**
+ * 嘗試從快取讀取
+ */
+const getFromCache = (key: string): NearbyRestaurantsResult | null => {
+  // 1. Try Memory
+  if (memoryCache.has(key)) {
+    const entry = memoryCache.get(key)!;
+    if (Date.now() - entry.timestamp < CACHE_DURATION) {
+      return entry.data;
+    } else {
+      memoryCache.delete(key); // Expired
+    }
+  }
+
+  // 2. Try LocalStorage
+  try {
+    const stored = localStorage.getItem(CACHE_PREFIX + key);
+    if (stored) {
+      const entry = JSON.parse(stored) as CacheEntry;
+      if (Date.now() - entry.timestamp < CACHE_DURATION) {
+        // Hydrate memory cache
+        memoryCache.set(key, entry);
+        return entry.data;
+      } else {
+        localStorage.removeItem(CACHE_PREFIX + key); // Expired
+      }
+    }
+  } catch (e) {
+    console.warn('LocalStorage read error:', e);
+  }
+
+  return null;
+};
+
+/**
+ * 寫入快取
+ */
+const saveToCache = (key: string, data: NearbyRestaurantsResult) => {
+  const entry: CacheEntry = { data, timestamp: Date.now() };
+  
+  // 1. Memory
+  memoryCache.set(key, entry);
+
+  // 2. LocalStorage
+  try {
+    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(entry));
+  } catch (e) {
+    console.warn('LocalStorage write error (quota exceeded?):', e);
+  }
+};
 
 // ======================================
 // Google Maps 載入檢測
@@ -176,13 +237,11 @@ export const searchNearbyRestaurants = async (
   }
 
   // ====== 快取檢查 ======
-  // 使用座標和半徑作為快取鍵
   const cacheKey = `${lat.toFixed(4)},${lng.toFixed(4)},${radius}`;
-  const cached = restaurantCache.get(cacheKey);
+  const cachedData = getFromCache(cacheKey);
   
-  // 如果有有效快取，直接回傳
-  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    return cached.data;
+  if (cachedData) {
+    return cachedData;
   }
 
   try {
@@ -284,7 +343,7 @@ export const searchNearbyRestaurants = async (
           const result = { restaurants, apiUnavailable: false };
           
           // 儲存到快取
-          restaurantCache.set(cacheKey, { data: result, timestamp: Date.now() });
+          saveToCache(cacheKey, result);
 
           resolve(result);
           
