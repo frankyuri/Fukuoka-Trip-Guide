@@ -341,3 +341,55 @@ export const formatDistance = (meters?: number): string => {
   if (meters < 1000) return `${Math.round(meters)}m`;
   return `${(meters / 1000).toFixed(1)}km`;
 };
+
+/**
+ * 搜尋特定地點（用於自動補全地址）
+ * @param query - 地點名稱（如 "福岡塔"）
+ * @returns 地點資訊 (座標、地址、Place ID)
+ */
+export const searchPlaceByName = async (query: string): Promise<{
+  lat: number;
+  lng: number;
+  address: string;
+  name: string;
+  placeId: string;
+} | null> => {
+  try {
+    await waitForGoogleMaps();
+    const google = (window as any).google;
+    
+    if (!google?.maps?.places) return null;
+
+    const mapDiv = document.createElement('div');
+    const service = new google.maps.places.PlacesService(mapDiv);
+    
+    // 使用 TextSearch (比 FindPlaceFromQuery 更有彈性) 
+    // 或者 FindPlaceFromQuery (fields: name, geometry, formatted_address)
+    // 這裡用 TextSearch 可以取得更多細節，但 FindPlaceFromQuery 較便宜且精確
+    const request = {
+      query: query,
+      fields: ['name', 'geometry', 'formatted_address', 'place_id'],
+    };
+
+    return new Promise((resolve) => {
+      service.findPlaceFromQuery(request, (results: any[], status: string) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {
+          const place = results[0];
+          resolve({
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng(),
+            address: place.formatted_address || '',
+            name: place.name,
+            placeId: place.place_id
+          });
+        } else {
+          resolve(null);
+        }
+      });
+    });
+
+  } catch (error) {
+    console.error('Error searching place:', error);
+    return null;
+  }
+};

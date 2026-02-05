@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   MapPin,
   Copy,
@@ -18,7 +18,7 @@ import { ItineraryItem, TransportType } from '../types';
 import { TransportIcon } from './TransportIcon';
 import { NearbyRestaurants } from './NearbyRestaurants';
 import { getPlaceInsight } from '../utils/gemini';
-import { searchNearbyRestaurants } from '../utils/places';
+import { searchNearbyRestaurants, searchPlaceByName } from '../utils/places';
 import { downloadICS } from '../utils/calendar';
 import { ITINERARY_DATA } from '../constants'; // Need to access date context
 import { ProgressCheckbox } from './ProgressTracker';
@@ -55,10 +55,47 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
   const [aiInsight, setAiInsight] = useState<string | null>(null);
   const [showNearbyRestaurants, setShowNearbyRestaurants] = useState(false);
 
-  // Local state helper for inputs to avoid too many re-renders up stream 
-  // actually for simplicity we might just fire onBlur (save) or onChange (controlled)
-  // Let's use direct onChange for now, it might be slow if list is huge but fine for < 10 items.
-  // Optimization: use defaultValue + onBlur to save.
+  // Auto-lookup state
+  const [isSearching, setIsSearching] = useState(false);
+
+  // Debounce logic for title changes
+  useEffect(() => {
+    if (!isEditing || !item.title) return;
+
+    // Only search if title length > 2 to avoid spam
+    if (item.title.length < 2) return;
+
+    // Check if title differs from what we might have auto-resolved? 
+    // Actually simpler: just search when it changes. 
+    // Ideally we want to avoid searching if the user just corrected a typo that doesn't change meaning, but hard to know.
+
+    // Use a timeout to debounce
+    const timeoutId = setTimeout(async () => {
+      // Start search
+      setIsSearching(true);
+      try {
+        const result = await searchPlaceByName(item.title);
+        if (result && onUpdate) {
+          // update logic
+          onUpdate({
+            ...item,
+            address_jp: result.address || item.address_jp, // Prefer found address
+            coordinates: { lat: result.lat, lng: result.lng },
+            googleMapsQuery: result.name // Update query to ensure map opens correctly
+          });
+        }
+      } catch (e) {
+        console.error('Auto lookup failed', e);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 1000); // 1 second debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [item.title, isEditing]); // Dependency on title. Limitation: onUpdate causes re-render, might re-trigger if logic flawed.
+  // Wait: onUpdate updates 'item', which triggers this effect again? 
+  // If we update address, 'item' changes. 'item.title' does NOT change.
+  // So dependency array [item.title] is correct. It won't loop unless we change title in effect.
 
   const handleUpdate = (field: keyof ItineraryItem, value: string) => {
     if (onUpdate) {
@@ -176,31 +213,44 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
             已完成
           </div>
         )}
+
         {/* Header: Time & Title */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-3">
-          <div className="flex items-start md:items-center gap-2 md:gap-3 flex-col md:flex-row w-full"> {/* w-full for edit inputs */}
-            <div className={`flex items-center gap-1.5 text-primary-600 font-bold bg-primary-50 px-2 py-1 md:px-2.5 md:py-1 rounded-md text-xs md:text-sm whitespace-nowrap ${isEditing ? 'border border-primary-200' : ''}`}>
+          <div className="flex items-start md:items-center gap-2 md:gap-3 flex-col md:flex-row w-full relative">
+
+            {/* Time Input */}
+            <div className={`flex items-center gap-1.5 text-primary-600 font-bold bg-primary-50 px-2 py-1 md:px-2.5 md:py-1 rounded-md text-xs md:text-sm whitespace-nowrap transition-all ${isEditing ? 'bg-white border border-primary-200 shadow-sm focus-within:ring-2 focus-within:ring-primary-300' : ''}`}>
               <Clock size={12} className="md:w-[14px] md:h-[14px]" />
               {isEditing ? (
                 <input
                   type="text"
                   value={item.time}
                   onChange={(e) => handleUpdate('time', e.target.value)}
-                  className="bg-transparent w-20 outline-none text-center"
+                  className="bg-transparent w-20 outline-none text-center font-mono"
                   onClick={(e) => e.stopPropagation()}
                 />
               ) : (
                 item.time
               )}
             </div>
+
+            {/* Title Input & Searching Spinner */}
             {isEditing ? (
-              <input
-                type="text"
-                value={item.title}
-                onChange={(e) => handleUpdate('title', e.target.value)}
-                className="text-lg md:text-2xl font-black text-gray-800 leading-tight bg-gray-50 border-b border-gray-300 outline-none w-full"
-                onClick={(e) => e.stopPropagation()}
-              />
+              <div className="relative w-full">
+                <input
+                  type="text"
+                  value={item.title}
+                  onChange={(e) => handleUpdate('title', e.target.value)}
+                  className="text-lg md:text-2xl font-black text-gray-800 leading-tight bg-white border border-gray-200 rounded-lg px-3 py-1 outline-none w-full focus:ring-2 focus:ring-primary-300 focus:border-transparent transition-all shadow-sm"
+                  placeholder="輸入景點名稱..."
+                  onClick={(e) => e.stopPropagation()}
+                />
+                {isSearching && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-primary-500 animate-spin">
+                    <Loader2 size={16} />
+                  </div>
+                )}
+              </div>
             ) : (
               <h3 className="text-lg md:text-2xl font-black text-gray-800 leading-tight">
                 {item.title}
@@ -292,8 +342,9 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
             <textarea
               value={item.description}
               onChange={(e) => handleUpdate('description', e.target.value)}
-              className="w-full text-gray-600 text-sm md:text-base font-medium mb-3 border-l-2 border-accent-red pl-3 py-0.5 leading-relaxed bg-gray-50 border outline-none min-h-[60px]"
+              className="w-full text-gray-600 text-sm md:text-base font-medium mb-3 border-l-2 border-primary-200 pl-3 py-2 leading-relaxed bg-white border border-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-primary-300 focus:border-transparent transition-all shadow-sm min-h-[80px]"
               onClick={(e) => e.stopPropagation()}
+              placeholder="輸入行程說明..."
             />
           ) : (
             <p className="text-gray-600 text-sm md:text-base font-medium mb-3 border-l-2 border-accent-red pl-3 py-0.5 leading-relaxed">
