@@ -13,9 +13,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as L from 'leaflet';
 import { ItineraryItem, TransportType } from '../types';
-import { Filter, X, Star, Utensils, ExternalLink, MapPin } from 'lucide-react';
+import { Filter, X, Star, Utensils, ExternalLink, MapPin, Crosshair, Navigation } from 'lucide-react';
 import { TransportIcon, getTransportLabel } from './TransportIcon';
-import { searchNearbyRestaurants, NearbyRestaurant, formatDistance } from '../utils/places';
+import { searchNearbyRestaurants, NearbyRestaurant, formatDistance, calculateDistance } from '../utils/places';
 
 // ======================================
 // 型別定義
@@ -138,6 +138,11 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
   // ====== 載入狀態（用於顯示骨架動畫） ======
   const [isMapLoading, setIsMapLoading] = useState(true);
 
+  // ====== 使用者定位 ======
+  const [userLocation, setUserLocation] = useState<{ lat: number, lng: number } | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
+  const userMarkerRef = useRef<L.CircleMarker | null>(null);
+
   // Initialize Map and Layer Controls
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
@@ -200,7 +205,7 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
     // 2 秒後強制隱藏 loading（手機上縮短時間）
     setTimeout(() => setIsMapLoading(false), isMobile ? 2000 : 3000);
 
-    // 縮放控制
+    // 縮放控制 (Move manually to adjust position if needed, but default is ok)
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     // 圖層切換控制
@@ -398,6 +403,74 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
     }
   }, [highlightedLocation]);
 
+  // Handle User Location Marker
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    // Remove existing user marker
+    if (userMarkerRef.current) {
+      userMarkerRef.current.remove();
+      userMarkerRef.current = null;
+    }
+
+    if (userLocation) {
+      userMarkerRef.current = L.circleMarker([userLocation.lat, userLocation.lng], {
+        radius: 8,
+        fillColor: '#3B82F6', // Blue-500
+        color: '#fff',
+        weight: 3,
+        opacity: 1,
+        fillOpacity: 1
+      }).addTo(map);
+
+      // Add a halo effect
+      const halo = L.circle([userLocation.lat, userLocation.lng], {
+        radius: 20,
+        color: '#3B82F6',
+        weight: 1,
+        opacity: 0.5,
+        fillOpacity: 0.2
+      }).addTo(map);
+
+      // Cleanup halo when effect re-runs (simplified for now, ideally track halos too)
+      return () => {
+        halo.remove();
+      };
+    }
+  }, [userLocation]);
+
+  const handleLocateMe = () => {
+    if (!navigator.geolocation) {
+      alert('您的瀏覽器不支援定位功能');
+      return;
+    }
+
+    setIsLocating(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setUserLocation({ lat: latitude, lng: longitude });
+        setIsLocating(false);
+
+        // Pan to user location
+        mapInstanceRef.current?.flyTo([latitude, longitude], 15, {
+          duration: 1.5
+        });
+      },
+      (error) => {
+        console.error('Error getting location:', error);
+        setIsLocating(false);
+        // Handle specific error codes if needed
+        let msg = '無法取得您的位置';
+        if (error.code === 1) msg = '請允許瀏覽器存取您的位置';
+        alert(msg);
+      },
+      { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+    );
+  };
+
   // Handle External Highlight (Hover from Timeline)
   useEffect(() => {
     if (!activeItemId) {
@@ -469,6 +542,22 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
         )}
       </div>
 
+      {/* 定位按鈕 */}
+      <div className="absolute top-4 right-4 z-[1000]">
+        <button
+          onClick={handleLocateMe}
+          className={`p-2.5 rounded-full shadow-md transition-all flex items-center justify-center ${isLocating
+              ? 'bg-primary-50 text-primary-600 animate-pulse'
+              : userLocation
+                ? 'bg-white text-blue-500 hover:bg-gray-50'
+                : 'bg-white text-gray-600 hover:bg-gray-50'
+            }`}
+          title="定位我的位置"
+        >
+          <Crosshair size={20} className={isLocating ? 'animate-spin' : ''} />
+        </button>
+      </div>
+
       {/* ====== 底部卡片（取代 popup） ====== */}
       {selectedItem && (
         <div
@@ -506,6 +595,18 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
                 <p className="text-xs text-gray-500 line-clamp-1">
                   {selectedItem.address_jp}
                 </p>
+                {/* 距離資訊 */}
+                {userLocation && selectedItem.coordinates && (
+                  <p className="text-xs text-blue-600 mt-1 flex items-center gap-1 font-medium">
+                    <Navigation size={10} />
+                    距離你 {formatDistance(calculateDistance(
+                      userLocation.lat,
+                      userLocation.lng,
+                      selectedItem.coordinates.lat,
+                      selectedItem.coordinates.lng
+                    ))}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -548,8 +649,8 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
                           {/* 營業狀態標籤 */}
                           {restaurant.isOpen !== undefined && (
                             <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${restaurant.isOpen
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-red-100 text-red-600'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-red-100 text-red-600'
                               }`}>
                               {restaurant.isOpen ? '營業中' : '休息中'}
                             </span>

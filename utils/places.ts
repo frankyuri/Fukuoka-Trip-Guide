@@ -59,7 +59,7 @@ export interface NearbyRestaurantsResult {
  * const distance = calculateDistance(33.5902, 130.4017, 33.5855, 130.4265);
  * // 回傳約 2700（公尺）
  */
-const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+export const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
   const R = 6371e3; // 地球半徑（公尺）
   
   // 將角度轉換為弧度
