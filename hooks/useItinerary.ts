@@ -30,14 +30,26 @@ export const useItinerary = () => {
     loadData();
   }, []);
 
+  // Sort items helper
+  const sortItemsByTime = (items: ItineraryItem[]) => {
+    return [...items].sort((a, b) => {
+      // Simple string comparison works for HH:MM 24h format
+      return a.time.localeCompare(b.time);
+    });
+  };
+
   const updateItem = useCallback(async (dayDate: string, updatedItem: ItineraryItem) => {
     setItinerary(prev => {
       const newItinerary = prev.map(day => {
         if (day.date !== dayDate) return day;
         
-        const newItems = day.items.map(item => 
+        // Update the specific item
+        let newItems = day.items.map(item => 
           item.id === updatedItem.id ? updatedItem : item
         );
+        
+        // Auto-sort if time changed
+        newItems = sortItemsByTime(newItems);
         
         const updatedDay = { ...day, items: newItems };
         saveDayItinerary(updatedDay).catch(err => console.error('Save failed:', err));
@@ -69,7 +81,7 @@ export const useItinerary = () => {
           googleMapsQuery: ''
         };
         
-        const newItems = [...day.items, newItem];
+        const newItems = sortItemsByTime([...day.items, newItem]);
         const updatedDay = { ...day, items: newItems };
         saveDayItinerary(updatedDay).catch(err => console.error('Save failed:', err));
         

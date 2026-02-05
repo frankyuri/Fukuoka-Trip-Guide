@@ -8,11 +8,14 @@ import {
   Clock,
   ShoppingBag,
   ArrowRight,
+  ExternalLink, // Added
+  MessageCircle, // Added
   Sparkles,
   CalendarPlus,
   Loader2,
   X,
-  Trash2
+  Trash2,
+  Search // Added
 } from 'lucide-react';
 import { ItineraryItem, TransportType } from '../types';
 import { TransportIcon } from './TransportIcon';
@@ -58,44 +61,87 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
   // Auto-lookup state
   const [isSearching, setIsSearching] = useState(false);
 
-  // Debounce logic for title changes
+  // Manual search trigger
+  const handleTitleSearch = async () => {
+    if (!item.title || item.title.length < 2) return;
+
+    setIsSearching(true);
+    try {
+      const result = await searchPlaceByName(item.title);
+      if (result && onUpdate) {
+        onUpdate({
+          ...item,
+          address_jp: result.address || item.address_jp,
+          coordinates: { lat: result.lat, lng: result.lng },
+          googleMapsQuery: result.name
+        });
+
+        // Sync Map: Focus on this item to fly to new coords
+        setTimeout(() => {
+          onActive?.(item.id);
+        }, 100);
+      }
+    } catch (e) {
+      console.error('Manual lookup failed', e);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleTimeBlur = (val: string) => {
+    // Basic Time Validation (HH:MM)
+    const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (timeRegex.test(val)) {
+      // Format to HH:MM (e.g., 9:00 -> 09:00)
+      const [h, m] = val.split(':');
+      const formatted = `${h.padStart(2, '0')}:${m}`;
+      if (formatted !== item.time) {
+        handleUpdate('time', formatted);
+      }
+    } else {
+      console.warn('Invalid time format');
+      // Optional: Toast error here
+    }
+  };
+
+  // Debounce logic for title changes - KEEPING it for auto-suggestions or just background update?
+  // User asked for "Save" button specifically. Maybe disable auto-debounce if manual button exists to avoid double firing?
+  // Or keep auto-debounce as a "nice to have" fallback but rely on button for immediate feedback.
+  // Let's keep auto-debounce but ensure handleTitleSearch can also be called.
   useEffect(() => {
     if (!isEditing || !item.title) return;
-
-    // Only search if title length > 2 to avoid spam
     if (item.title.length < 2) return;
 
-    // Check if title differs from what we might have auto-resolved? 
-    // Actually simpler: just search when it changes. 
-    // Ideally we want to avoid searching if the user just corrected a typo that doesn't change meaning, but hard to know.
-
-    // Use a timeout to debounce
     const timeoutId = setTimeout(async () => {
-      // Start search
+      // Only run auto-search if not already searching (simple check)
+      // Actually let's just use the manual function logic effectively but silent?
+      // For now, let's DISABLE the auto-debounce effect if we want strict "Save" button control,
+      // OR keep it for "Live update". The user Complaint was "No save button".
+      // So adding the button fixes the complaint. I'll keep the debounce for seamless experience.
+
+      // ... existing debounce logic ...
       setIsSearching(true);
       try {
         const result = await searchPlaceByName(item.title);
         if (result && onUpdate) {
-          // update logic
           onUpdate({
             ...item,
-            address_jp: result.address || item.address_jp, // Prefer found address
+            address_jp: result.address || item.address_jp,
             coordinates: { lat: result.lat, lng: result.lng },
-            googleMapsQuery: result.name // Update query to ensure map opens correctly
+            googleMapsQuery: result.name
           });
+          // Note: We probably DON'T want to auto-fly map on type-debounce as it might be annoying while typing.
+          // vs Manual Search button which SHOULD fly.
         }
       } catch (e) {
         console.error('Auto lookup failed', e);
       } finally {
         setIsSearching(false);
       }
-    }, 1000); // 1 second debounce
+    }, 2000); // Increased debounce to 2s to make manual button more useful
 
     return () => clearTimeout(timeoutId);
-  }, [item.title, isEditing]); // Dependency on title. Limitation: onUpdate causes re-render, might re-trigger if logic flawed.
-  // Wait: onUpdate updates 'item', which triggers this effect again? 
-  // If we update address, 'item' changes. 'item.title' does NOT change.
-  // So dependency array [item.title] is correct. It won't loop unless we change title in effect.
+  }, [item.title, isEditing]);
 
   const handleUpdate = (field: keyof ItineraryItem, value: string) => {
     if (onUpdate) {
@@ -224,8 +270,11 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
               {isEditing ? (
                 <input
                   type="text"
-                  value={item.time}
-                  onChange={(e) => handleUpdate('time', e.target.value)}
+                  defaultValue={item.time} // Uncontrolled for safer typing
+                  onBlur={(e) => handleTimeBlur(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') e.currentTarget.blur();
+                  }}
                   className="bg-transparent w-20 outline-none text-center font-mono"
                   onClick={(e) => e.stopPropagation()}
                 />
@@ -236,20 +285,36 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
 
             {/* Title Input & Searching Spinner */}
             {isEditing ? (
-              <div className="relative w-full">
-                <input
-                  type="text"
-                  value={item.title}
-                  onChange={(e) => handleUpdate('title', e.target.value)}
-                  className="text-lg md:text-2xl font-black text-gray-800 leading-tight bg-white border border-gray-200 rounded-lg px-3 py-1 outline-none w-full focus:ring-2 focus:ring-primary-300 focus:border-transparent transition-all shadow-sm"
-                  placeholder="輸入景點名稱..."
-                  onClick={(e) => e.stopPropagation()}
-                />
-                {isSearching && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-primary-500 animate-spin">
-                    <Loader2 size={16} />
-                  </div>
-                )}
+              <div className="relative w-full flex items-center gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={item.title}
+                    onChange={(e) => handleUpdate('title', e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleTitleSearch();
+                    }}
+                    className="text-lg md:text-2xl font-black text-gray-800 leading-tight bg-white border border-gray-200 rounded-lg pl-3 pr-10 py-1 outline-none w-full focus:ring-2 focus:ring-primary-300 focus:border-transparent transition-all shadow-sm"
+                    placeholder="輸入景點名稱..."
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  {isSearching && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-primary-500 animate-spin">
+                      <Loader2 size={16} />
+                    </div>
+                  )}
+                </div>
+                {/* Search Button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleTitleSearch();
+                  }}
+                  className="p-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 active:scale-95 transition-all shadow-sm flex-shrink-0"
+                  title="搜尋並儲存位置"
+                >
+                  <Search size={18} />
+                </button>
               </div>
             ) : (
               <h3 className="text-lg md:text-2xl font-black text-gray-800 leading-tight">
