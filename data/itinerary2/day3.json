@@ -102,6 +102,24 @@
             ],
             "nearbySpots": [],
             "shoppingSideQuests": []
+        },
+        {
+            "id": "d3-4",
+            "time": "21:00",
+            "title": "HOTEL WBF GRANDE HAKATA (最後一晚)",
+            "description": "最後一晚好好休息，記得整理行李準備明天退房！泡完大浴場後早點睡，明天要趕飛機。",
+            "address_jp": "〒812-0016 福岡県福岡市博多区博多駅南2丁目2-5",
+            "address_en": "2-2-5 Hakataeki Minami, Hakata Ward, Fukuoka",
+            "coordinates": {
+                "lat": 33.5855,
+                "lng": 130.4265
+            },
+            "transportType": "WALK",
+            "transportDetail": "從燒肉店步行約 5-10 分鐘回飯店。",
+            "googleMapsQuery": "HOTEL WBF GRANDE HAKATA",
+            "recommendedFood": [],
+            "nearbySpots": [],
+            "shoppingSideQuests": []
         }
     ]
 }

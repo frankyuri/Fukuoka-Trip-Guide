@@ -119,6 +119,24 @@
             "shoppingSideQuests": [
                 "KITTE 博多"
             ]
+        },
+        {
+            "id": "d1-6",
+            "time": "21:00",
+            "title": "HOTEL WBF GRANDE HAKATA (回飯店休息)",
+            "description": "回到飯店好好休息，記得到頂樓大浴場泡湯消除疲勞！明天還有精彩行程。",
+            "address_jp": "〒812-0016 福岡県福岡市博多区博多駅南2丁目2-5",
+            "address_en": "2-2-5 Hakataeki Minami, Hakata Ward, Fukuoka",
+            "coordinates": {
+                "lat": 33.5855,
+                "lng": 130.4265
+            },
+            "transportType": "WALK",
+            "transportDetail": "從博多站步行約 10-15 分鐘回飯店。",
+            "googleMapsQuery": "HOTEL WBF GRANDE HAKATA",
+            "recommendedFood": [],
+            "nearbySpots": [],
+            "shoppingSideQuests": []
         }
     ]
 }
