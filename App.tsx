@@ -36,7 +36,7 @@ import { Pencil, Save, RotateCcw, Plus, X } from 'lucide-react';
 
 const App: React.FC = () => {
   // Use custom hook for DB data
-  const { itinerary, loading, isEditing, setIsEditing, updateItem, addItem, deleteItem, addDay, resetToDefault } = useItinerary();
+  const { itinerary, loading, isEditing, setIsEditing, updateItem, addItem, deleteItem, addDay, resetToDefault, activePlan, switchPlan } = useItinerary();
 
   // Read initial day from URL for share link support
   // ... (keep logic but use itinerary data)
@@ -181,9 +181,31 @@ const App: React.FC = () => {
           <h1 className="text-3xl md:text-6xl font-black mb-3 md:mb-4 leading-tight tracking-tight">
             福岡之旅
           </h1>
-          <p className="text-white/80 max-w-lg mx-auto text-xs md:text-lg font-light mb-6 md:mb-8 px-4 leading-relaxed">
+          <p className="text-white/80 max-w-lg mx-auto text-xs md:text-lg font-light mb-4 px-4 leading-relaxed">
             從博多地標到門司港懷舊，為您量身打造的 4 天 3 夜完美行程。
           </p>
+
+          {/* Plan Switcher */}
+          <div className="flex justify-center gap-2 mb-6 md:mb-8">
+            <button
+              onClick={() => switchPlan('plan1')}
+              className={`px-4 py-2 rounded-full text-xs md:text-sm font-bold transition-all duration-300 ${activePlan === 'plan1'
+                  ? 'bg-white text-primary-900 shadow-lg scale-105'
+                  : 'bg-white/10 text-white/80 hover:bg-white/20 border border-white/20'
+                }`}
+            >
+              方案一
+            </button>
+            <button
+              onClick={() => switchPlan('plan2')}
+              className={`px-4 py-2 rounded-full text-xs md:text-sm font-bold transition-all duration-300 ${activePlan === 'plan2'
+                  ? 'bg-white text-primary-900 shadow-lg scale-105'
+                  : 'bg-white/10 text-white/80 hover:bg-white/20 border border-white/20'
+                }`}
+            >
+              備選二
+            </button>
+          </div>
         </div>
 
         {/* Day Selector */}

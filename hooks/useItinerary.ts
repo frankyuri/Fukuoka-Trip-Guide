@@ -1,18 +1,26 @@
 import { useState, useEffect, useCallback } from 'react';
 import { DayItinerary, ItineraryItem, TransportType } from '../types';
 import { getAllItineraries, saveDayItinerary, resetItineraries } from '../utils/db';
-import { ITINERARY_DATA } from '../constants'; // Fallback
+import { ITINERARY_DATA, ITINERARY_DATA_2 } from '../constants'; // Fallback
+import { ItineraryPlanType } from '../utils/dataLoader';
 
 export const useItinerary = () => {
+  const [activePlan, setActivePlan] = useState<ItineraryPlanType>('plan1');
   const [itinerary, setItinerary] = useState<DayItinerary[]>(ITINERARY_DATA); // Init with static first to prevent flash
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Load from DB on mount
+  // Get fallback data based on active plan
+  const getFallbackData = useCallback(() => {
+    return activePlan === 'plan1' ? ITINERARY_DATA : ITINERARY_DATA_2;
+  }, [activePlan]);
+
+  // Load from DB on mount and when plan changes
   useEffect(() => {
     const loadData = async () => {
+      setLoading(true);
       try {
-        const data = await getAllItineraries();
+        const data = await getAllItineraries(activePlan);
         // Sort by "Day X" number
         const sortedData = data.sort((a, b) => {
            const getDayNum = (title: string) => {
@@ -24,12 +32,22 @@ export const useItinerary = () => {
         setItinerary(sortedData);
       } catch (error) {
         console.error('Failed to load itinerary from DB:', error);
+        setItinerary(getFallbackData());
       } finally {
         setLoading(false);
       }
     };
     loadData();
-  }, []);
+  }, [activePlan, getFallbackData]);
+
+  /**
+   * Switch to a different itinerary plan
+   */
+  const switchPlan = useCallback((plan: ItineraryPlanType) => {
+    if (plan !== activePlan) {
+      setActivePlan(plan);
+    }
+  }, [activePlan]);
 
   // Helper to sort items by time
   const sortItemsByTime = (items: ItineraryItem[]): ItineraryItem[] => {
@@ -56,14 +74,14 @@ export const useItinerary = () => {
           // Yet if user changes 09:00 to 10:00, it might jump. 
           // Let's NOT sort automatically to avoid UI jumping under cursor.
           const newDay = { ...day, items: newItems };
-          saveDayItinerary(newDay).catch(err => console.error('Save failed:', err));
+          saveDayItinerary(newDay, activePlan).catch(err => console.error('Save failed:', err));
           return newDay;
         }
         return day;
       });
       return newItinerary;
     });
-  }, []);
+  }, [activePlan]);
 
   const addItem = useCallback(async (dayDate: string) => {
     setItinerary(prev => {
@@ -88,14 +106,14 @@ export const useItinerary = () => {
           const sortedItems = sortItemsByTime(newItems);
           
           const newDay = { ...day, items: sortedItems };
-          saveDayItinerary(newDay).catch(err => console.error('Save failed:', err));
+          saveDayItinerary(newDay, activePlan).catch(err => console.error('Save failed:', err));
           return newDay;
         }
         return day;
       });
       return newItinerary;
     });
-  }, []);
+  }, [activePlan]);
 
   const deleteItem = useCallback(async (dayDate: string, itemId: string) => {
     if (!window.confirm('確定要刪除此行程嗎？')) return;
@@ -105,14 +123,14 @@ export const useItinerary = () => {
         if (day.date === dayDate) {
           const newItems = day.items.filter(item => item.id !== itemId);
           const newDay = { ...day, items: newItems };
-          saveDayItinerary(newDay).catch(err => console.error('Save failed:', err));
+          saveDayItinerary(newDay, activePlan).catch(err => console.error('Save failed:', err));
           return newDay;
         }
         return day;
       });
       return newItinerary;
     });
-  }, []);
+  }, [activePlan]);
 
   const addDay = useCallback(async () => {
     setItinerary(prev => {
@@ -166,10 +184,10 @@ export const useItinerary = () => {
         items: []
       };
 
-      saveDayItinerary(newDay).catch(err => console.error('Save failed:', err));
+      saveDayItinerary(newDay, activePlan).catch(err => console.error('Save failed:', err));
       return [...prev, newDay];
     });
-  }, []);
+  }, [activePlan]);
 
   const deleteDay = useCallback(async (dayDate: string) => {
      if (!window.confirm('確定要刪除這整天的行程嗎？此動作無法復原。')) return;
@@ -192,14 +210,14 @@ export const useItinerary = () => {
     
     setLoading(true);
     try {
-      const defaultData = await resetItineraries();
+      const defaultData = await resetItineraries(activePlan);
       setItinerary(defaultData);
     } catch (error) {
       console.error('Reset failed:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activePlan]);
 
   return {
     itinerary,
@@ -210,6 +228,8 @@ export const useItinerary = () => {
     addItem,
     deleteItem,
     addDay,
-    resetToDefault
+    resetToDefault,
+    activePlan,
+    switchPlan,
   };
 };

@@ -1,9 +1,25 @@
 import { DayItinerary } from '../types';
-import { ITINERARY_DATA } from '../constants';
+import { ITINERARY_DATA, ITINERARY_DATA_2 } from '../constants';
+import { ItineraryPlanType } from './dataLoader';
 
 const DB_NAME = 'fukuoka-trip-db';
 const STORE_NAME = 'itineraries';
-const DB_VERSION = 1;
+const STORE_NAME_2 = 'itineraries2'; // 備選二的 store
+const DB_VERSION = 2; // 升級版本以支援新 store
+
+/**
+ * 根據方案取得對應的 store 名稱
+ */
+const getStoreName = (plan: ItineraryPlanType): string => {
+  return plan === 'plan1' ? STORE_NAME : STORE_NAME_2;
+};
+
+/**
+ * 根據方案取得對應的預設資料
+ */
+const getDefaultData = (plan: ItineraryPlanType): DayItinerary[] => {
+  return plan === 'plan1' ? ITINERARY_DATA : ITINERARY_DATA_2;
+};
 
 /**
  * Initialize the database (Native API)
@@ -23,32 +39,40 @@ const openDB = (): Promise<IDBDatabase> => {
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
+      // 方案一 store
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: 'date' });
+      }
+      // 方案二 store
+      if (!db.objectStoreNames.contains(STORE_NAME_2)) {
+        db.createObjectStore(STORE_NAME_2, { keyPath: 'date' });
       }
     };
   });
 };
 
 /**
- * Get all itineraries from DB.
+ * Get all itineraries from DB for specified plan.
  * If DB is empty, seeds it with default data.
  */
-export const getAllItineraries = async (): Promise<DayItinerary[]> => {
+export const getAllItineraries = async (plan: ItineraryPlanType = 'plan1'): Promise<DayItinerary[]> => {
+  const storeName = getStoreName(plan);
+  const defaultData = getDefaultData(plan);
+  
   try {
     const db = await openDB();
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readonly');
-      const store = transaction.objectStore(STORE_NAME);
+      const transaction = db.transaction([storeName], 'readonly');
+      const store = transaction.objectStore(storeName);
       const request = store.getAll();
 
       request.onsuccess = async () => {
         const items = request.result as DayItinerary[];
         if (items.length === 0) {
           // Seed DB with default data
-          console.log('Seeding DB with default itinerary data...');
-          await seedDatabase(db);
-          resolve(ITINERARY_DATA); // Return default data immediately
+          console.log(`Seeding DB with default ${plan} itinerary data...`);
+          await seedDatabase(db, plan);
+          resolve(defaultData); // Return default data immediately
         } else {
           resolve(items);
         }
@@ -58,16 +82,19 @@ export const getAllItineraries = async (): Promise<DayItinerary[]> => {
     });
   } catch (error) {
     console.error('Error getting itineraries:', error);
-    return ITINERARY_DATA; // Fallback
+    return defaultData; // Fallback
   }
 };
 
-const seedDatabase = async (db: IDBDatabase): Promise<void> => {
+const seedDatabase = async (db: IDBDatabase, plan: ItineraryPlanType = 'plan1'): Promise<void> => {
+  const storeName = getStoreName(plan);
+  const defaultData = getDefaultData(plan);
+  
   return new Promise((resolve, reject) => {
-    const transaction = db.transaction([STORE_NAME], 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
+    const transaction = db.transaction([storeName], 'readwrite');
+    const store = transaction.objectStore(storeName);
     
-    ITINERARY_DATA.forEach(day => {
+    defaultData.forEach(day => {
       store.put(day);
     });
 
@@ -79,12 +106,14 @@ const seedDatabase = async (db: IDBDatabase): Promise<void> => {
 /**
  * Save a single day itinerary to DB
  */
-export const saveDayItinerary = async (day: DayItinerary): Promise<void> => {
+export const saveDayItinerary = async (day: DayItinerary, plan: ItineraryPlanType = 'plan1'): Promise<void> => {
+  const storeName = getStoreName(plan);
+  
   try {
     const db = await openDB();
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
+      const transaction = db.transaction([storeName], 'readwrite');
+      const store = transaction.objectStore(storeName);
       const request = store.put(day);
 
       request.onsuccess = () => resolve();
@@ -103,21 +132,23 @@ export const saveDayItinerary = async (day: DayItinerary): Promise<void> => {
 };
 
 /**
- * Reset DB to default data
+ * Reset DB to default data for specified plan
  */
-export const resetItineraries = async (): Promise<DayItinerary[]> => {
+export const resetItineraries = async (plan: ItineraryPlanType = 'plan1'): Promise<DayItinerary[]> => {
+  const storeName = getStoreName(plan);
+  const defaultData = getDefaultData(plan);
+  
   try {
     const db = await openDB();
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction([STORE_NAME], 'readwrite');
-      const store = transaction.objectStore(STORE_NAME);
+      const transaction = db.transaction([storeName], 'readwrite');
+      const store = transaction.objectStore(storeName);
       const clearRequest = store.clear();
 
       clearRequest.onsuccess = async () => {
-        // Re-seed is handled by getAllItineraries, but we can do it explicitly here or just let the app reload.
-        // Better to re-seed here to return fresh data.
-        seedDatabase(db).then(() => {
-             resolve(ITINERARY_DATA);
+        // Re-seed with default data
+        seedDatabase(db, plan).then(() => {
+             resolve(defaultData);
         });
       };
       
@@ -125,6 +156,7 @@ export const resetItineraries = async (): Promise<DayItinerary[]> => {
     });
   } catch (error) {
      console.error('Error resetting itineraries:', error);
-     return ITINERARY_DATA;
+     return defaultData;
   }
 };
+

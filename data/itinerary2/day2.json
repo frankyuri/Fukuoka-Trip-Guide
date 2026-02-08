@@ -1,0 +1,96 @@
+{
+    "date": "2/28 (五)",
+    "dayTitle": "Day 2",
+    "theme": "太宰府・柳川觀光套票一日遊",
+    "focus": "西鐵電車移動 → 歷史散策 → 遊船體驗 → 水炊鍋晚餐",
+    "items": [
+        {
+            "id": "d2-1",
+            "time": "09:30",
+            "title": "太宰府天滿宮",
+            "description": "使用套票搭車。參拜學問之神，欣賞飛梅傳說。表參道上有許多商店，必吃梅枝餅。",
+            "address_jp": "〒818-0117 福岡県太宰府市宰府4丁目7-1",
+            "address_en": "4-7-1 Saifu, Dazaifu, Fukuoka",
+            "coordinates": {
+                "lat": 33.5215,
+                "lng": 130.5348
+            },
+            "transportType": "TRAIN",
+            "transportDetail": "從西鐵福岡(天神)站搭乘西鐵電車至太宰府站 (需轉車或搭直達車)。",
+            "googleMapsQuery": "Dazaifu Tenmangu",
+            "recommendedFood": [
+                "梅枝餅 (かさの家)",
+                "星巴克太宰府表參道店"
+            ],
+            "nearbySpots": [
+                "九州國立博物館"
+            ],
+            "shoppingSideQuests": [
+                "太宰府參道商店街"
+            ]
+        },
+        {
+            "id": "d2-2",
+            "time": "13:30",
+            "title": "元祖本吉屋 (柳川鰻魚飯)",
+            "description": "柳川必吃蒸籠鰻魚飯。將蒲燒鰻魚與淋上醬汁的飯一起蒸，口感軟糯，是當地的百年名店。",
+            "address_jp": "〒832-0022 福岡県柳川市旭町69",
+            "address_en": "69 Asahimachi, Yanagawa, Fukuoka",
+            "coordinates": {
+                "lat": 33.1668,
+                "lng": 130.4137
+            },
+            "transportType": "TRAIN",
+            "transportDetail": "從太宰府搭車至西鐵二日市，轉特急列車至西鐵柳川站，再轉乘計程車或接駁車。",
+            "googleMapsQuery": "Motoyoshiya Yanagawa",
+            "recommendedFood": [
+                "蒸籠鰻魚飯 (せいろ蒸し)"
+            ],
+            "nearbySpots": [
+                "柳川白秋道路"
+            ],
+            "shoppingSideQuests": []
+        },
+        {
+            "id": "d2-3",
+            "time": "15:00",
+            "title": "柳川遊船 (川下り)",
+            "description": "憑套票體驗約 70 分鐘的遊船，冬天船上有暖桌。聽船夫吟唱民謠，欣賞水鄉風光。",
+            "address_jp": "〒832-0826 福岡県柳川市三橋町高畑329 (松月乗船場)",
+            "address_en": "329 Mitsuhashimachi Takahatake, Yanagawa, Fukuoka",
+            "coordinates": {
+                "lat": 33.1695,
+                "lng": 130.4182
+            },
+            "transportType": "SHIP",
+            "transportDetail": "套票包含船票，至松月乘船場搭乘 [12]。",
+            "googleMapsQuery": "Yanagawa River Punting",
+            "recommendedFood": [],
+            "nearbySpots": [
+                "御花 (下船處附近)"
+            ],
+            "shoppingSideQuests": []
+        },
+        {
+            "id": "d2-4",
+            "time": "19:00",
+            "title": "博多水炊鍋 華味鳥 (博多站前店)",
+            "description": "回到博多吃晚餐。福岡代表性料理雞肉火鍋，湯頭富含膠原蛋白，雞肉鮮嫩，與昨晚的重口味牛腸鍋形成對比。",
+            "address_jp": "〒812-0011 福岡県福岡市博多区博多駅前3丁目23-17",
+            "address_en": "3-23-17 Hakataekimae, Hakata Ward, Fukuoka",
+            "coordinates": {
+                "lat": 33.5878,
+                "lng": 130.4172
+            },
+            "transportType": "TRAIN",
+            "transportDetail": "從柳川搭西鐵回天神，轉地鐵回博多，步行至餐廳。",
+            "googleMapsQuery": "Hanamidori Hakata Ekimae",
+            "recommendedFood": [
+                "水炊鍋 (Hanamidori)",
+                "炸雞塊"
+            ],
+            "nearbySpots": [],
+            "shoppingSideQuests": []
+        }
+    ]
+}
