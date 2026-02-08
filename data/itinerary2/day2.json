@@ -5,6 +5,29 @@
     "focus": "西鐵電車移動 → 歷史散策 → 遊船體驗 → 水炊鍋晚餐",
     "items": [
         {
+            "id": "d2-0",
+            "time": "08:30",
+            "title": "HOTEL WBF GRANDE HAKATA (出發)",
+            "description": "從飯店出發前往天神搭乘西鐵電車。建議在飯店享用早餐或到附近便利商店購買。",
+            "address_jp": "〒812-0016 福岡県福岡市博多区博多駅南2丁目2-5",
+            "address_en": "2-2-5 Hakataeki Minami, Hakata Ward, Fukuoka",
+            "coordinates": {
+                "lat": 33.5855,
+                "lng": 130.4265
+            },
+            "transportType": "WALK",
+            "transportDetail": "步行至博多站約 10-15 分鐘。",
+            "googleMapsQuery": "HOTEL WBF GRANDE HAKATA",
+            "recommendedFood": [
+                "飯店早餐",
+                "便利商店飯糰"
+            ],
+            "nearbySpots": [
+                "博多車站"
+            ],
+            "shoppingSideQuests": []
+        },
+        {
             "id": "d2-1",
             "time": "09:30",
             "title": "太宰府天滿宮",

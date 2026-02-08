@@ -5,6 +5,24 @@
     "focus": "退房 → 直奔機場 → 免稅店掃貨 → 10:00 起飛",
     "items": [
         {
+            "id": "d4-0",
+            "time": "06:45",
+            "title": "HOTEL WBF GRANDE HAKATA (退房)",
+            "description": "早起收拾行李並辦理退房。請飯店幫忙叫計程車前往機場。",
+            "address_jp": "〒812-0016 福岡県福岡市博多区博多駅南2丁目2-5",
+            "address_en": "2-2-5 Hakataeki Minami, Hakata Ward, Fukuoka",
+            "coordinates": {
+                "lat": 33.5855,
+                "lng": 130.4265
+            },
+            "transportType": "TAXI",
+            "transportDetail": "請飯店櫃檯幫忙叫車。",
+            "googleMapsQuery": "HOTEL WBF GRANDE HAKATA",
+            "recommendedFood": [],
+            "nearbySpots": [],
+            "shoppingSideQuests": []
+        },
+        {
             "id": "d4-1",
             "time": "07:15",
             "title": "前往福岡機場 (FUK)",

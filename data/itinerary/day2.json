@@ -1,164 +1,102 @@
 {
-    "date": "2/28 (六)",
+    "date": "2/28 (五)",
     "dayTitle": "Day 2",
-    "theme": "跨海吃壽司 & 懷舊港口",
-    "focus": "【週末限定】唐戶市場壽司馬拉松 + 門司港散策",
+    "theme": "門司港・下關跨海懷舊之旅",
+    "focus": "唐戶市場壽司市集 → 關門海峽渡輪 → 復古洋樓散策 → 燒咖哩",
     "items": [
         {
-            "id": "d2-0",
-            "time": "08:00",
-            "title": "Hotel WBF Grande Hakata",
-            "description": "飯店出發，前往博多車站",
-            "address_jp": "福岡市博多区博多駅南 2-2-5",
-            "address_en": "Hotel WBF Grande Hakata",
-            "coordinates": {
-                "lat": 33.5855,
-                "lng": 130.4265
-            },
-            "transportType": "WALK",
-            "transportDetail": "前往博多車站",
-            "googleMapsQuery": "Hotel WBF Grande Hakata",
-            "recommendedFood": [],
-            "nearbySpots": []
-        },
-        {
             "id": "d2-1",
-            "time": "08:30",
-            "title": "門司港駅",
-            "description": "移動：博多 → 門司港 (鐵道旅行與沿途風景)",
-            "address_jp": "福岡県北九州市門司区西海岸1-5-31",
-            "address_en": "Mojiko Station",
+            "time": "09:00",
+            "title": "移動：博多 → 門司港",
+            "description": "搭乘 JR 鹿兒島本線前往門司港。建議搭乘「特急 Sonic (音速號)」至小倉轉車，或搭乘直達快速列車。門司港站本身是國家重要文化財，記得在復古站牌前拍照。",
+            "address_jp": "〒801-0841 福岡県北九州市門司区西海岸1-5-31",
+            "address_en": "1-5-31 Nishikaigan, Moji Ward, Kitakyushu",
             "coordinates": {
-                "lat": 33.9442,
-                "lng": 130.9613
+                "lat": 33.9443,
+                "lng": 130.9572
             },
             "transportType": "TRAIN",
-            "transportDetail": "特急 Sonic / 新幹線 至小倉轉車",
-            "googleMapsQuery": "門司港駅",
-            "recommendedFood": [
-                "博多站鐵路便當 (Ekiben)",
-                "特急列車上的咖啡"
-            ],
+            "transportDetail": "JR 博多站 -> JR 門司港站 (約 45-60 分鐘)。",
+            "googleMapsQuery": "Mojiko Station",
+            "recommendedFood": [],
             "nearbySpots": [
-                "小倉站 (轉車點)",
-                "門司港車站"
-            ]
+                "星巴克 門司港站店 (舊三等待合室)"
+            ],
+            "shoppingSideQuests": []
         },
         {
             "id": "d2-2",
             "time": "10:30",
-            "title": "唐戶市場 (山口縣)",
-            "description": "週末限定！滿滿的握壽司與河豚",
-            "address_jp": "山口県下関市唐戸町 5-50",
-            "address_en": "Karato Market",
+            "title": "唐戶市場 (下關)",
+            "description": "搭乘聯絡船跨越關門海峽（約5分鐘）。週五適逢「活跳跳馬關街」市集，必吃新鮮握壽司、河豚刺身、炸河豚。像自助餐一樣夾取後，到海邊看著大橋享用。",
+            "address_jp": "〒750-0005 山口県下関市唐戸町5-50",
+            "address_en": "5-50 Karatocho, Shimonoseki, Yamaguchi",
             "coordinates": {
-                "lat": 33.9578,
+                "lat": 33.9571,
                 "lng": 130.9427
             },
             "transportType": "SHIP",
-            "transportDetail": "門司港搭關門聯絡船 (5分)",
-            "googleMapsQuery": "唐戸市場",
+            "transportDetail": "門司港棧橋搭乘「關門聯絡船」至唐戶棧橋。",
+            "googleMapsQuery": "Karato Market",
             "recommendedFood": [
-                "河豚生魚片 (必吃)",
-                "大托盤握壽司",
-                "炸河豚"
+                "河豚生魚片",
+                "握壽司",
+                "河豚味噌湯"
             ],
             "nearbySpots": [
                 "赤間神宮",
-                "日清講和紀念館",
-                "龜山八幡宮"
-            ]
+                "日清講和紀念館 (春帆樓)"
+            ],
+            "shoppingSideQuests": []
         },
         {
             "id": "d2-3",
-            "time": "12:30",
-            "title": "門司港懷舊區",
-            "description": "大正浪漫風格的紅磚洋房",
-            "address_jp": "北九州市門司区港町",
-            "address_en": "Mojiko Retro",
+            "time": "14:30",
+            "title": "門司港懷舊區散策",
+            "description": "漫步於大正時期的紅磚洋房建築群。推薦參觀愛因斯坦住過的「舊門司三井俱樂部」以及「舊門司海關」。",
+            "address_jp": "〒801-0852 福岡県北九州市門司区港町",
+            "address_en": "Minatomachi, Moji Ward, Kitakyushu",
             "coordinates": {
-                "lat": 33.9463,
-                "lng": 130.9608
+                "lat": 33.9475,
+                "lng": 130.9623
             },
-            "transportType": "SHIP",
-            "transportDetail": "搭船返回門司港側",
-            "googleMapsQuery": "門司港レトロ",
+            "transportType": "WALK",
+            "transportDetail": "從唐戶搭船返回門司港後步行遊覽。",
+            "googleMapsQuery": "Mojiko Retro",
             "recommendedFood": [
-                "燒咖哩 (Yaki Curry) - 門司港名物",
-                "香蕉人甜點"
+                "門司港布丁 (Milk Hall Mojiko)",
+                "香蕉甜點"
             ],
             "nearbySpots": [
-                "九州鐵道紀念館",
-                "藍翼門司吊橋"
+                "藍翼門司吊橋",
+                "九州鐵道紀念館"
             ],
             "shoppingSideQuests": [
-                {
-                    "name": "海峽廣場",
-                    "category": "伴手禮",
-                    "description": "香蕉口味甜點、雜貨"
-                }
+                "海峽廣場 (伴手禮店)"
             ]
         },
         {
             "id": "d2-4",
-            "time": "15:30",
-            "title": "小倉城",
-            "description": "北九州的歷史象徵與天守閣",
-            "address_jp": "北九州市小倉北区城内 2-1",
-            "address_en": "Kokura Castle",
+            "time": "16:30",
+            "title": "Princess Phi Phi (燒咖哩晚餐)",
+            "description": "門司港名物「燒咖哩」。這家店曾獲選第一名，特色是明太子燒咖哩與泰式皇室風格的調味，蔬菜豐富，口感層次多。",
+            "address_jp": "〒801-0841 福岡県北九州市門司区西海岸1-4-7",
+            "address_en": "1-4-7 Nishikaigan, Moji Ward, Kitakyushu",
             "coordinates": {
-                "lat": 33.8845,
-                "lng": 130.8732
+                "lat": 33.9458,
+                "lng": 130.9585
             },
-            "transportType": "TRAIN",
-            "transportDetail": "JR 回小倉站 (15分)",
-            "googleMapsQuery": "小倉城",
+            "transportType": "WALK",
+            "transportDetail": "位於門司港車站附近。",
+            "googleMapsQuery": "Princess Phi Phi Mojiko",
             "recommendedFood": [
-                "旦過市場的大學丼",
-                "揚子江豚包 (肉包)",
-                "辻利茶舗"
+                "國王燒咖哩",
+                "明太子燒咖哩"
             ],
             "nearbySpots": [
-                "旦過市場",
-                "Riverwalk 北九州",
-                "松本清張紀念館"
+                "Bear Fruits (另一家燒咖哩名店)"
             ],
-            "shoppingSideQuests": [
-                {
-                    "name": "松本清 小倉店",
-                    "category": "藥妝",
-                    "description": "人比較少，貨全"
-                },
-                {
-                    "name": "Aru Aru City",
-                    "category": "動漫",
-                    "description": "北九州秋葉原，動漫迷必去"
-                }
-            ]
-        },
-        {
-            "id": "d2-5",
-            "time": "19:00",
-            "title": "博多 華味鳥",
-            "description": "博多/天神 晚餐 (福岡靈魂美食：牛腸鍋或水炊鍋)",
-            "address_jp": "福岡市博多区博多駅前3-23-17",
-            "address_en": "Hakata Hanamidori / Echigoya",
-            "coordinates": {
-                "lat": 33.5905,
-                "lng": 130.4182
-            },
-            "transportType": "TRAIN",
-            "transportDetail": "搭 JR 返回博多",
-            "googleMapsQuery": "博多 華味鳥",
-            "recommendedFood": [
-                "博多華味鳥 (水炊鍋)",
-                "越後屋 (牛腸鍋)",
-                "博多祇園鉄なべ (餃子)"
-            ],
-            "nearbySpots": [
-                "博多運河城",
-                "中洲川端商店街"
-            ]
+            "shoppingSideQuests": []
         }
     ]
 }

@@ -5,6 +5,28 @@
     "focus": "睡飽 → LaLaport 福岡 → 博多站最後衝刺 → 燒肉大餐",
     "items": [
         {
+            "id": "d3-0",
+            "time": "10:00",
+            "title": "HOTEL WBF GRANDE HAKATA (睡飽出發)",
+            "description": "今天可以睡到自然醒！享用飯店早餐或大浴場後，悠閒出發前往 LaLaport。",
+            "address_jp": "〒812-0016 福岡県福岡市博多区博多駅南2丁目2-5",
+            "address_en": "2-2-5 Hakataeki Minami, Hakata Ward, Fukuoka",
+            "coordinates": {
+                "lat": 33.5855,
+                "lng": 130.4265
+            },
+            "transportType": "WALK",
+            "transportDetail": "步行至博多站約 10-15 分鐘。",
+            "googleMapsQuery": "HOTEL WBF GRANDE HAKATA",
+            "recommendedFood": [
+                "飯店早餐"
+            ],
+            "nearbySpots": [
+                "博多車站"
+            ],
+            "shoppingSideQuests": []
+        },
+        {
             "id": "d3-1",
             "time": "11:00",
             "title": "LaLaport 福岡 (實體鋼彈)",
