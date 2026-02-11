@@ -203,6 +203,21 @@ export const useItinerary = () => {
     }
   }, [activePlan]);
 
+  const importItinerary = useCallback(async (data: DayItinerary[]) => {
+    setLoading(true);
+    try {
+      // Save all days to DB
+      for (const day of data) {
+        await saveDayItinerary(day, activePlan);
+      }
+      setItinerary(data);
+    } catch (error) {
+      console.error('Import failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [activePlan]);
+
   return {
     itinerary,
     loading,
@@ -215,5 +230,6 @@ export const useItinerary = () => {
     resetToDefault,
     activePlan,
     switchPlan,
+    importItinerary,
   };
 };

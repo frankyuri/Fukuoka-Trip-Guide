@@ -9,7 +9,7 @@ import { useProgressTracker, DayProgressBar } from './components/ProgressTracker
 // Lazy load heavy components for code splitting
 const CountdownWidget = lazy(() => import('./components/CountdownWidget').then(m => ({ default: m.CountdownWidget })));
 const EmergencyInfo = lazy(() => import('./components/EmergencyInfo').then(m => ({ default: m.EmergencyInfo })));
-import { Plane, Map as MapIcon, List, Loader2 } from 'lucide-react';
+import { Plane, Map as MapIcon, List, Loader2, Globe } from 'lucide-react';
 
 // Lazy load heavy components for code splitting
 const DayMap = lazy(() => import('./components/DayMap').then(m => ({ default: m.DayMap })));
@@ -32,11 +32,43 @@ const WidgetLoadingFallback = () => (
 );
 
 import { useItinerary } from './hooks/useItinerary';
-import { Pencil, Save, RotateCcw, Plus, X } from 'lucide-react';
+import { Pencil, Save, RotateCcw, Plus, X, Download, Upload } from 'lucide-react';
+import { useI18n, LOCALE_LABELS, Locale } from './i18n';
+import { exportItineraryJSON, importItineraryJSON, exportAllICS } from './utils/exportImport';
 
 const App: React.FC = () => {
   // Use custom hook for DB data
-  const { itinerary, loading, isEditing, setIsEditing, updateItem, addItem, deleteItem, addDay, resetToDefault, activePlan, switchPlan } = useItinerary();
+  const { itinerary, loading, isEditing, setIsEditing, updateItem, addItem, deleteItem, addDay, resetToDefault, activePlan, switchPlan, importItinerary } = useItinerary();
+  const { t, locale, setLocale } = useI18n();
+  const [showLangMenu, setShowLangMenu] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Handle JSON import
+  const handleImport = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!window.confirm(t('confirmImportOverwrite'))) {
+      e.target.value = '';
+      return;
+    }
+
+    const result = await importItineraryJSON(file);
+    if (result.success) {
+      await importItinerary(result.data);
+      setDbError(null);
+      // Show success toast briefly
+      setDbError(null);
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium';
+      toast.textContent = t('importSuccess');
+      document.body.appendChild(toast);
+      setTimeout(() => { document.body.removeChild(toast); }, 3000);
+    } else {
+      setDbError(t('importError'));
+    }
+    e.target.value = '';
+  }, [t, importItinerary]);
 
   // Read initial day from URL for share link support
   // ... (keep logic but use itinerary data)
@@ -144,7 +176,7 @@ const App: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-surface-50">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="animate-spin text-primary-500" size={40} />
-          <p className="text-slate-500 font-medium">載入行程資料庫中...</p>
+          <p className="text-slate-500 font-medium">{t('loading')}</p>
         </div>
       </div>
     );
@@ -166,12 +198,40 @@ const App: React.FC = () => {
 
           {/* Top Controls: Edit Mode & Reset */}
           <div className="absolute top-6 right-6 flex gap-2">
+            {/* Language Switcher */}
+            <div className="relative">
+              <button
+                onClick={() => setShowLangMenu(!showLangMenu)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/30 text-xs font-bold text-white hover:bg-white/20 transition-all"
+              >
+                <Globe size={12} />
+                {LOCALE_LABELS[locale]}
+              </button>
+              {showLangMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowLangMenu(false)} />
+                  <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50 min-w-[120px]">
+                    {(Object.entries(LOCALE_LABELS) as [Locale, string][]).map(([key, label]) => (
+                      <button
+                        key={key}
+                        onClick={() => { setLocale(key); setShowLangMenu(false); }}
+                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${locale === key ? 'bg-primary-50 text-primary-700 font-bold' : 'text-gray-700 hover:bg-gray-50'
+                          }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+
             {isEditing && (
               <button
                 onClick={resetToDefault}
                 className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-red-500/20 backdrop-blur-md border border-red-400/30 text-xs font-bold text-white hover:bg-red-500/40 transition-all"
               >
-                <RotateCcw size={12} /> 還原預設
+                <RotateCcw size={12} /> {t('resetDefault')}
               </button>
             )}
             <button
@@ -182,19 +242,50 @@ const App: React.FC = () => {
                 }`}
             >
               {isEditing ? <Save size={14} /> : <Pencil size={14} />}
-              {isEditing ? '完成編輯' : '編輯行程'}
+              {isEditing ? t('exitEdit') : t('editMode')}
             </button>
           </div>
+
+          {/* Export / Import (visible in edit mode) */}
+          {isEditing && (
+            <div className="absolute top-6 left-6 flex gap-1.5 flex-wrap">
+              <button
+                onClick={() => exportItineraryJSON(itinerary, activePlan)}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/30 text-[10px] font-bold text-white hover:bg-white/20 transition-all"
+              >
+                <Download size={11} /> JSON
+              </button>
+              <button
+                onClick={() => exportAllICS(itinerary)}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/30 text-[10px] font-bold text-white hover:bg-white/20 transition-all"
+              >
+                <Download size={11} /> ICS
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/30 text-[10px] font-bold text-white hover:bg-white/20 transition-all"
+              >
+                <Upload size={11} /> {t('importJSON')}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleImport}
+                className="hidden"
+              />
+            </div>
+          )}
 
           <div className="inline-flex items-center gap-2 px-3 py-1 md:px-4 md:py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/30 text-[10px] md:text-xs font-bold tracking-widest uppercase mb-4 md:mb-6 shadow-glow-pink">
             <Plane size={12} className="text-sakura-300" /> 2025 Fukuoka Trip
           </div>
 
           <h1 className="text-3xl md:text-6xl font-black mb-3 md:mb-4 leading-tight tracking-tight">
-            福岡之旅
+            {t('appTitle')}
           </h1>
           <p className="text-white/80 max-w-lg mx-auto text-xs md:text-lg font-light mb-4 px-4 leading-relaxed">
-            從博多地標到門司港懷舊，為您量身打造的 4 天 3 夜完美行程。
+            {t('appSubtitle')}
           </p>
 
           {/* Plan Switcher */}
@@ -206,7 +297,7 @@ const App: React.FC = () => {
                 : 'bg-white/10 text-white/80 hover:bg-white/20 border border-white/20'
                 }`}
             >
-              方案一
+              {t('plan1')}
             </button>
             <button
               onClick={() => switchPlan('plan2')}
@@ -215,7 +306,7 @@ const App: React.FC = () => {
                 : 'bg-white/10 text-white/80 hover:bg-white/20 border border-white/20'
                 }`}
             >
-              備選二
+              {t('plan2')}
             </button>
           </div>
         </div>
@@ -252,7 +343,7 @@ const App: React.FC = () => {
               <button
                 onClick={addDay}
                 className="snap-center flex-shrink-0 flex items-center justify-center p-3 md:p-4 min-w-[60px] md:min-w-[80px] rounded-2xl border border-white/20 bg-white/5 hover:bg-white/20 text-white/60 hover:text-white transition-all group"
-                title="新增一天"
+                title={t('addDay')}
               >
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-dashed border-current flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Plus size={20} />
@@ -334,7 +425,7 @@ const App: React.FC = () => {
                   className="w-full py-4 mt-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-400 font-bold flex items-center justify-center gap-2 hover:border-primary-400 hover:text-primary-500 hover:bg-primary-50 transition-all"
                 >
                   <Plus size={20} />
-                  新增行程
+                  {t('addItem')}
                 </button>
               )}
             </div>
@@ -393,7 +484,7 @@ const App: React.FC = () => {
               }`}
           >
             <List size={22} strokeWidth={mobileViewMode === 'list' ? 2.5 : 2} />
-            <span className="text-[10px] font-bold">行程列表</span>
+            <span className="text-[10px] font-bold">{t('listView')}</span>
           </button>
 
           <div className="w-[1px] h-8 bg-gray-100"></div>
@@ -406,7 +497,7 @@ const App: React.FC = () => {
               }`}
           >
             <MapIcon size={22} strokeWidth={mobileViewMode === 'map' ? 2.5 : 2} />
-            <span className="text-[10px] font-bold">地圖模式</span>
+            <span className="text-[10px] font-bold">{t('mapView')}</span>
           </button>
         </div>
       </div>
