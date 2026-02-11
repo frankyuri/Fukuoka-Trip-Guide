@@ -132,6 +132,33 @@ export const saveDayItinerary = async (day: DayItinerary, plan: ItineraryPlanTyp
 };
 
 /**
+ * Delete a single day itinerary from DB
+ */
+export const deleteDayItinerary = async (dayDate: string, plan: ItineraryPlanType = 'plan1'): Promise<void> => {
+  const storeName = getStoreName(plan);
+
+  try {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction([storeName], 'readwrite');
+      const store = transaction.objectStore(storeName);
+      const request = store.delete(dayDate);
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  } catch (error) {
+    console.error('Error deleting day itinerary:', error);
+    if (typeof window !== 'undefined') {
+      const event = new CustomEvent('db-error', {
+        detail: { message: '無法刪除行程，請檢查您的瀏覽器設定' }
+      });
+      window.dispatchEvent(event);
+    }
+  }
+};
+
+/**
  * Reset DB to default data for specified plan
  */
 export const resetItineraries = async (plan: ItineraryPlanType = 'plan1'): Promise<DayItinerary[]> => {

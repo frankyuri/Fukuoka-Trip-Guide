@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { DayItinerary, ItineraryItem, TransportType } from '../types';
-import { getAllItineraries, saveDayItinerary, resetItineraries } from '../utils/db';
+import { getAllItineraries, saveDayItinerary, deleteDayItinerary, resetItineraries } from '../utils/db';
 import { ITINERARY_DATA, ITINERARY_DATA_2 } from '../constants'; // Fallback
 import { ItineraryPlanType } from '../utils/dataLoader';
 
@@ -60,150 +60,134 @@ export const useItinerary = () => {
     });
   };
 
-  const updateItem = useCallback(async (dayDate: string, updatedItem: ItineraryItem) => {
+  const updateItem = useCallback((dayDate: string, updatedItem: ItineraryItem) => {
     setItinerary(prev => {
       const newItinerary = prev.map(day => {
         if (day.date === dayDate) {
           const newItems = day.items.map(item =>
             item.id === updatedItem.id ? updatedItem : item
           );
-          // Auto-sort if time changed? Maybe confusing while typing. 
-          // Let's sort only on reload or explicit save? 
-          // For now, let's keep order stable until "save" or let it be.
-          // Actually, standard behavior is auto-sort.
-          // Yet if user changes 09:00 to 10:00, it might jump. 
-          // Let's NOT sort automatically to avoid UI jumping under cursor.
-          const newDay = { ...day, items: newItems };
-          saveDayItinerary(newDay, activePlan).catch(err => console.error('Save failed:', err));
-          return newDay;
+          return { ...day, items: newItems };
         }
         return day;
       });
+
+      // Persist to DB outside the pure state updater
+      const updatedDay = newItinerary.find(d => d.date === dayDate);
+      if (updatedDay) {
+        saveDayItinerary(updatedDay, activePlan).catch(err => console.error('Save failed:', err));
+      }
+
       return newItinerary;
     });
   }, [activePlan]);
 
-  const addItem = useCallback(async (dayDate: string) => {
+  const addItem = useCallback((dayDate: string) => {
     setItinerary(prev => {
       const newItinerary = prev.map(day => {
         if (day.date === dayDate) {
           const newItem: ItineraryItem = {
             id: `item-${Date.now()}`,
-            time: '09:00', // Default
+            time: '09:00',
             title: '新行程',
             description: '',
             address_jp: '',
-            address_en: '', // Added missing property
+            address_en: '',
             transportType: TransportType.WALK,
             transportDetail: '步行',
-            coordinates: { lat: 33.5902, lng: 130.4017 }, // Default (Hakata Station approx)
+            coordinates: { lat: 33.5902, lng: 130.4017 },
             googleMapsQuery: '博多駅',
             recommendedFood: [],
             nearbySpots: []
           };
-          const newItems = [...day.items, newItem];
-          // We can sort here as it's a new item
-          const sortedItems = sortItemsByTime(newItems);
-          
-          const newDay = { ...day, items: sortedItems };
-          saveDayItinerary(newDay, activePlan).catch(err => console.error('Save failed:', err));
-          return newDay;
+          const sortedItems = sortItemsByTime([...day.items, newItem]);
+          return { ...day, items: sortedItems };
         }
         return day;
       });
+
+      const updatedDay = newItinerary.find(d => d.date === dayDate);
+      if (updatedDay) {
+        saveDayItinerary(updatedDay, activePlan).catch(err => console.error('Save failed:', err));
+      }
+
       return newItinerary;
     });
   }, [activePlan]);
 
-  const deleteItem = useCallback(async (dayDate: string, itemId: string) => {
+  const deleteItem = useCallback((dayDate: string, itemId: string) => {
     if (!window.confirm('確定要刪除此行程嗎？')) return;
-    
+
     setItinerary(prev => {
       const newItinerary = prev.map(day => {
         if (day.date === dayDate) {
-          const newItems = day.items.filter(item => item.id !== itemId);
-          const newDay = { ...day, items: newItems };
-          saveDayItinerary(newDay, activePlan).catch(err => console.error('Save failed:', err));
-          return newDay;
+          return { ...day, items: day.items.filter(item => item.id !== itemId) };
         }
         return day;
       });
+
+      const updatedDay = newItinerary.find(d => d.date === dayDate);
+      if (updatedDay) {
+        saveDayItinerary(updatedDay, activePlan).catch(err => console.error('Save failed:', err));
+      }
+
       return newItinerary;
     });
   }, [activePlan]);
 
-  const addDay = useCallback(async () => {
+  const addDay = useCallback(() => {
     setItinerary(prev => {
       const lastDay = prev[prev.length - 1];
       let newDayNum = 1;
       let newDateStr = 'New Date';
 
       if (lastDay) {
-        // Parse Day Title
         const match = lastDay.dayTitle.match(/Day (\d+)/);
         if (match) {
-           newDayNum = parseInt(match[1], 10) + 1;
+          newDayNum = parseInt(match[1], 10) + 1;
         }
 
-        // Parse Date String: "2/27 (五)"
         const dateMatch = lastDay.date.match(/(\d+)\/(\d+)\s*\((.)\)/);
         if (dateMatch) {
           const month = parseInt(dateMatch[1], 10);
           const day = parseInt(dateMatch[2], 10);
-          
-          // Create date object (Using current year or next based on month)
           const now = new Date();
-          let year = now.getFullYear();
-          
-          // Simple logic: if month is small but we are late in year, might be next year. 
-          // But for simple "add day" flow, assuming same year as previous day usually safe 
-          // unless it's Dec->Jan.
-          // Let's rely on constructing the Date and adding 1 day.
-          
+          const year = now.getFullYear();
           const lastDateObj = new Date(year, month - 1, day);
           lastDateObj.setDate(lastDateObj.getDate() + 1);
-          
-          // Format new date
+
           const newMonth = lastDateObj.getMonth() + 1;
           const newDayVal = lastDateObj.getDate();
-          const dayOfWeekIndex = lastDateObj.getDay(); // 0 = Sun
+          const dayOfWeekIndex = lastDateObj.getDay();
           const days = ['日', '一', '二', '三', '四', '五', '六'];
-          
           newDateStr = `${newMonth}/${newDayVal} (${days[dayOfWeekIndex]})`;
         } else {
-           // Fallback if parsing fails
-           newDateStr = `${new Date().getMonth() + 1}/${new Date().getDate()} (New)`;
+          newDateStr = `${new Date().getMonth() + 1}/${new Date().getDate()} (New)`;
         }
       }
 
       const newDay: DayItinerary = {
-        date: newDateStr, 
+        date: newDateStr,
         dayTitle: `Day ${newDayNum}`,
         theme: '自由探索',
         focus: '新增的行程',
         items: []
       };
 
+      // Persist outside the pure state updater
       saveDayItinerary(newDay, activePlan).catch(err => console.error('Save failed:', err));
+
       return [...prev, newDay];
     });
   }, [activePlan]);
 
-  const deleteDay = useCallback(async (dayDate: string) => {
-     if (!window.confirm('確定要刪除這整天的行程嗎？此動作無法復原。')) return;
-     // Note: We need a deleteDayInDB function potentially, or just overwrite?
-     // IndexedDB native doesn't have partial sync, we need to delete the key.
-     // But wait, saveDayItinerary uses 'put'. We need a 'delete' op in DB.
-     // For now, let's just filter it out from state and maybe not sync delete to DB?? 
-     // NO, must sync. I need to export `deleteDayFromDB` from db.ts first.
-     // Since I haven't done that yet, I will skip implementing deleteDay fully 
-     // or just update state and let user know. 
-     // Actually, I should probably add delete to db.ts first.
-     
-     // Let's hold off on deleteDay logic until DB helper is ready.
-     // Just returning state for now to avoid breaking build.
-     setItinerary(prev => prev.filter(d => d.date !== dayDate));
-  }, []);
+  const deleteDay = useCallback((dayDate: string) => {
+    if (!window.confirm('確定要刪除這整天的行程嗎？此動作無法復原。')) return;
+
+    setItinerary(prev => prev.filter(d => d.date !== dayDate));
+    // Sync deletion to IndexedDB
+    deleteDayItinerary(dayDate, activePlan).catch(err => console.error('Delete day from DB failed:', err));
+  }, [activePlan]);
 
   const resetToDefault = useCallback(async () => {
     if (!window.confirm('確定要還原成預設行程嗎？您的修改將會消失。')) return;

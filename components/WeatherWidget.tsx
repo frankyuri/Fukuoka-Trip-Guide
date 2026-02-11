@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useWeather } from '../hooks/useWeather';
 import { Cloud, CloudRain, Sun, CloudSun, CloudDrizzle, Snowflake, CloudLightning, Loader2, WifiOff } from 'lucide-react';
 
 interface WeatherWidgetProps {
@@ -48,107 +49,43 @@ const getWeatherConditionText = (code: number): string => {
 
 export const WeatherWidget: React.FC<WeatherWidgetProps> = ({ date }) => {
   const [weather, setWeather] = useState<WeatherState | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const { data: weatherData, loading, error } = useWeather();
 
   useEffect(() => {
-    // LocalStorage Cache Implementation
-    const CACHE_KEY = `weather_cache_fukuoka`;
-    const CACHE_duration = 4 * 60 * 60 * 1000; // 4 hours
+    if (!weatherData) return;
 
-    const getCachedWeather = () => {
-      try {
-        const stored = localStorage.getItem(CACHE_KEY);
-        if (stored) {
-          const { data, timestamp } = JSON.parse(stored);
-          if (Date.now() - timestamp < CACHE_duration) {
-            return data;
-          }
-        }
-      } catch (e) {
-        console.warn('Weather cache read error', e);
-      }
-      return null;
-    };
-
-    const cachedDt = getCachedWeather();
-    if (cachedDt) {
-      processWeatherData(cachedDt, date);
-      setLoading(false); // Ensure loading is set to false immediately if cached
-      return;
-    }
-
-    const fetchWeather = async () => {
-      setLoading(true);
-      setError(false);
-      try {
-        const response = await fetch(
-          'https://api.open-meteo.com/v1/forecast?latitude=33.5902&longitude=130.4017&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FTokyo'
-        );
-
-        if (!response.ok) throw new Error('API Error');
-
-        const data = await response.json();
-
-        // Cache the response to LocalStorage
-        try {
-          localStorage.setItem(CACHE_KEY, JSON.stringify({
-            data,
-            timestamp: Date.now()
-          }));
-        } catch (e) {
-          console.warn('Weather cache write error', e);
-        }
-
-        processWeatherData(data, date);
-      } catch (err) {
-        console.error("Weather fetch error:", err);
-        setError(true);
-        setLoading(false);
-      }
-    };
-
-    fetchWeather();
-  }, [date]);
-
-  const processWeatherData = (data: any, dateToMatch: string) => {
-    const dateMatch = dateToMatch.match(/(\d{1,2})\/(\d{1,2})/);
+    const dateMatch = date.match(/(\d{1,2})\/(\d{1,2})/);
     let targetIndex = -1;
 
     if (dateMatch) {
       const month = dateMatch[1].padStart(2, '0');
       const day = dateMatch[2].padStart(2, '0');
       const targetDateString = `-${month}-${day}`;
-      targetIndex = data.daily.time.findIndex((t: string) => t.endsWith(targetDateString));
+      targetIndex = weatherData.daily.dates.findIndex((t: string) => t.endsWith(targetDateString));
     }
 
     if (targetIndex !== -1) {
-      const code = data.daily.weather_code[targetIndex];
+      const code = weatherData.daily.weatherCodes[targetIndex];
       setWeather({
-        tempHigh: Math.round(data.daily.temperature_2m_max[targetIndex]),
-        tempLow: Math.round(data.daily.temperature_2m_min[targetIndex]),
+        tempHigh: weatherData.daily.maxTemps[targetIndex],
+        tempLow: weatherData.daily.minTemps[targetIndex],
         condition: getWeatherConditionText(code),
         icon: getWeatherIcon(code),
-        precip: data.daily.precipitation_probability_max[targetIndex],
+        precip: weatherData.daily.precipProbabilities[targetIndex],
         isForecastMatch: true
       });
-    } else {
-      const currentCode = data.current.weather_code;
-      const todayMax = data.daily.temperature_2m_max[0];
-      const todayMin = data.daily.temperature_2m_min[0];
-
+    } else if (weatherData.current) {
       setWeather({
-        tempHigh: Math.round(todayMax),
-        tempLow: Math.round(todayMin),
-        currentTemp: Math.round(data.current.temperature_2m),
-        condition: getWeatherConditionText(currentCode),
-        icon: getWeatherIcon(currentCode),
-        precip: data.daily.precipitation_probability_max[0],
+        tempHigh: weatherData.daily.maxTemps[0],
+        tempLow: weatherData.daily.minTemps[0],
+        currentTemp: weatherData.current.temperature,
+        condition: getWeatherConditionText(weatherData.current.weatherCode),
+        icon: getWeatherIcon(weatherData.current.weatherCode),
+        precip: weatherData.daily.precipProbabilities[0],
         isForecastMatch: false
       });
     }
-    setLoading(false);
-  }
+  }, [weatherData, date]);
   if (loading) {
     return (
       <div className="inline-flex bg-white/60 backdrop-blur-md border border-white/60 rounded-2xl p-2 md:p-3 pr-4 md:pr-5 shadow-sm items-center gap-3 h-[60px] md:h-[72px] justify-center w-full max-w-[200px]">

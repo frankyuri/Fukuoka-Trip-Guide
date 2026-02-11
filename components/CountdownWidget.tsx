@@ -10,6 +10,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Calendar, Plane, Thermometer, Shirt, Umbrella, Sun, Wind } from 'lucide-react';
+import { useWeather } from '../hooks/useWeather';
 
 // ======================================
 // 型別定義
@@ -168,100 +169,60 @@ export const CountdownWidget: React.FC<CountdownWidgetProps> = ({
     // 旅行狀態：'upcoming' 即將出發 / 'ongoing' 進行中 / 'past' 已結束
     const [tripStatus, setTripStatus] = useState<'upcoming' | 'ongoing' | 'past'>('upcoming');
 
-    // 天氣資料（用於穿搭建議）
-    const [weather, setWeather] = useState<{ high: number; low: number; precip: number } | null>(null);
+    // 使用統一天氣 Hook
+    const { data: weatherData } = useWeather();
 
     /**
      * 初始化時計算倒數天數和旅行狀態
      */
     useEffect(() => {
-        // ====== 解析日期字串 ======
-        // 從 "2/27" 格式提取月份和日期
         const dateMatch = tripStartDate.match(/(\d{1,2})\/(\d{1,2})/);
         if (!dateMatch) return;
 
-        const month = parseInt(dateMatch[1], 10);  // 月份
-        const day = parseInt(dateMatch[2], 10);    // 日期
+        const month = parseInt(dateMatch[1], 10);
+        const day = parseInt(dateMatch[2], 10);
 
-        const now = new Date();  // 目前時間
+        const now = new Date();
         const currentYear = now.getFullYear();
 
-        // ====== 判斷年份 ======
-        // 如果沒有指定年份，自動判斷
         let year = tripYear || currentYear;
         const tentativeDate = new Date(year, month - 1, day);
 
-        // 如果該日期已經過了，假設是明年
         if (!tripYear && tentativeDate < now) {
             year = currentYear + 1;
         }
 
-        // ====== 計算旅行日期範圍 ======
-        const tripDate = new Date(year, month - 1, day);          // 出發日
-        const tripEnd = new Date(year, month - 1, day + 4);       // 結束日（假設 4 天行程）
+        const tripDate = new Date(year, month - 1, day);
+        const tripEnd = new Date(year, month - 1, day + 4);
 
-        // ====== 計算天數差異 ======
         const timeDiff = tripDate.getTime() - now.getTime();
-        const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));  // 轉換成天數
+        const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
 
-        // ====== 設定狀態 ======
         if (daysDiff > 0) {
-            // 還沒出發
             setDaysUntilTrip(daysDiff);
             setTripStatus('upcoming');
         } else if (now >= tripDate && now <= tripEnd) {
-            // 正在旅途中
             setDaysUntilTrip(0);
             setTripStatus('ongoing');
         } else {
-            // 旅行已結束
             setTripStatus('past');
         }
-
-        // 取得天氣資料用於穿搭建議
-        fetchWeather();
     }, [tripStartDate, tripYear]);
 
-    /**
-     * 從 Open-Meteo API 取得福岡天氣預報
-     * 用於產生穿搭建議
-     */
-    const fetchWeather = async () => {
-        try {
-            // 檢查是否有快取的天氣資料
-            const cached = (window as any).__weatherCache?.['weather_fukuoka'];
-            let data = cached?.data;
-
-            // 如果沒有快取或快取超過 10 分鐘，重新取得
-            if (!data || Date.now() - cached.timestamp > 10 * 60 * 1000) {
-                const response = await fetch(
-                    'https://api.open-meteo.com/v1/forecast?' +
-                    'latitude=33.5902&longitude=130.4017&' +      // 福岡座標
-                    'daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&' +
-                    'timezone=Asia%2FTokyo'
-                );
-                if (response.ok) {
-                    data = await response.json();
-                }
-            }
-
-            // 如果成功取得資料，設定天氣狀態
-            if (data?.daily) {
-                setWeather({
-                    high: Math.round(data.daily.temperature_2m_max[0]),      // 今日最高溫
-                    low: Math.round(data.daily.temperature_2m_min[0]),       // 今日最低溫
-                    precip: data.daily.precipitation_probability_max[0] || 0  // 降雨機率
-                });
-            }
-        } catch (error) {
-            console.error('Failed to fetch weather for clothing suggestions');
-        }
-    };
-
-    // 根據天氣產生穿搭建議
-    const clothingSuggestions = weather
-        ? getClothingSuggestions(weather.high, weather.low, weather.precip)
+    // 從統一天氣資料產生穿搭建議（取第一天資料）
+    const clothingSuggestions = weatherData
+        ? getClothingSuggestions(
+            weatherData.daily.maxTemps[0],
+            weatherData.daily.minTemps[0],
+            weatherData.daily.precipProbabilities[0] || 0
+        )
         : [];
+
+    // 天氣摘要（用於顯示溫度範圍）
+    const weatherSummary = weatherData ? {
+        high: weatherData.daily.maxTemps[0],
+        low: weatherData.daily.minTemps[0],
+    } : null;
 
     // 如果旅行已結束，不顯示這個元件
     if (tripStatus === 'past') {
@@ -321,9 +282,9 @@ export const CountdownWidget: React.FC<CountdownWidgetProps> = ({
                     <div className="flex items-center gap-1.5 mb-2">
                         <Thermometer size={14} className="text-indigo-500" />
                         <span className="text-xs font-bold text-indigo-700">穿搭建議</span>
-                        {weather && (
+                        {weatherSummary && (
                             <span className="text-[10px] text-indigo-400 ml-auto">
-                                預報 {weather.low}°C ~ {weather.high}°C
+                                預報 {weatherSummary.low}°C ~ {weatherSummary.high}°C
                             </span>
                         )}
                     </div>

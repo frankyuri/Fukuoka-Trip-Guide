@@ -59,6 +59,18 @@ const App: React.FC = () => {
   const [mobileViewMode, setMobileViewMode] = useState<'list' | 'map'>('list');
   const [dbError, setDbError] = useState<string | null>(null);
 
+  // Listen for DB error events dispatched from db.ts
+  useEffect(() => {
+    const handleDbError = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      setDbError(detail?.message || '資料庫操作失敗');
+      // Auto-dismiss after 5 seconds
+      setTimeout(() => setDbError(null), 5000);
+    };
+    window.addEventListener('db-error', handleDbError);
+    return () => window.removeEventListener('db-error', handleDbError);
+  }, []);
+
   const [prevItineraryLength, setPrevItineraryLength] = useState(0);
 
   // Validate activeDayIndex when data loads
@@ -190,8 +202,8 @@ const App: React.FC = () => {
             <button
               onClick={() => switchPlan('plan1')}
               className={`px-4 py-2 rounded-full text-xs md:text-sm font-bold transition-all duration-300 ${activePlan === 'plan1'
-                  ? 'bg-white text-primary-900 shadow-lg scale-105'
-                  : 'bg-white/10 text-white/80 hover:bg-white/20 border border-white/20'
+                ? 'bg-white text-primary-900 shadow-lg scale-105'
+                : 'bg-white/10 text-white/80 hover:bg-white/20 border border-white/20'
                 }`}
             >
               方案一
@@ -199,8 +211,8 @@ const App: React.FC = () => {
             <button
               onClick={() => switchPlan('plan2')}
               className={`px-4 py-2 rounded-full text-xs md:text-sm font-bold transition-all duration-300 ${activePlan === 'plan2'
-                  ? 'bg-white text-primary-900 shadow-lg scale-105'
-                  : 'bg-white/10 text-white/80 hover:bg-white/20 border border-white/20'
+                ? 'bg-white text-primary-900 shadow-lg scale-105'
+                : 'bg-white/10 text-white/80 hover:bg-white/20 border border-white/20'
                 }`}
             >
               備選二
@@ -303,6 +315,7 @@ const App: React.FC = () => {
                   key={item.id}
                   item={item}
                   isLast={index === activeDay.items.length - 1}
+                  dayDate={activeDay.date}
                   isActive={activeItemId === item.id}
                   onActive={setActiveItemId}
                   onRestaurantHover={setHighlightedLocation}
@@ -397,6 +410,20 @@ const App: React.FC = () => {
           </button>
         </div>
       </div>
+
+
+      {/* DB Error Toast */}
+      {dbError && (
+        <div className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300 max-w-sm">
+          <span className="text-sm font-medium">{dbError}</span>
+          <button
+            onClick={() => setDbError(null)}
+            className="text-red-200 hover:text-white transition-colors flex-shrink-0"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
     </div>
   );

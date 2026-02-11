@@ -24,12 +24,13 @@ const NearbyRestaurants = React.lazy(() => import('./NearbyRestaurants').then(m 
 import { getPlaceInsight } from '../utils/gemini';
 import { searchNearbyRestaurants, searchPlaceByName } from '../utils/places';
 import { downloadICS } from '../utils/calendar';
-import { ITINERARY_DATA } from '../constants'; // Need to access date context
+// Removed static ITINERARY_DATA import — dayDate is now passed as prop
 import { ProgressCheckbox } from './ProgressTracker';
 
 interface TimelineItemProps {
   item: ItineraryItem;
   isLast: boolean;
+  dayDate: string;
   isActive?: boolean;
   onActive?: (id: string | null) => void;
   onRestaurantHover?: (location: { lat: number, lng: number } | null) => void;
@@ -41,9 +42,24 @@ interface TimelineItemProps {
   onDelete?: (id: string) => void;
 }
 
+/**
+ * Sanitize HTML to prevent XSS from AI-generated content.
+ * Strips <script>, <iframe>, on* event handlers, and javascript: URIs.
+ */
+const sanitizeHtml = (html: string): string => {
+  return html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<iframe[^>]*>[\s\S]*?<\/iframe>/gi, '')
+    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, '')
+    .replace(/on\w+\s*=\s*\S+/gi, '')
+    .replace(/href\s*=\s*["']javascript:[^"']*["']/gi, 'href="#"')
+    .replace(/src\s*=\s*["']javascript:[^"']*["']/gi, 'src=""');
+};
+
 export const TimelineItem = React.memo<TimelineItemProps>(({
   item,
   isLast,
+  dayDate,
   isActive = false,
   onActive,
   onRestaurantHover,
@@ -201,12 +217,7 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
 
   const handleCalendarExport = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Find the date for this item. In a real app, this might be passed down via props.
-    // Here we search the constants for simplicity of the demo structure.
-    const day = ITINERARY_DATA.find(d => d.items.some(i => i.id === item.id));
-    if (day) {
-      downloadICS(item, day.date);
-    }
+    downloadICS(item, dayDate);
   };
 
   return (
@@ -391,15 +402,14 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
                   [&_ol]:list-decimal [&_ol]:pl-4 [&_ol]:space-y-1
                   [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:space-y-1"
                 dangerouslySetInnerHTML={{
-                  __html: aiInsight
-                    // 轉換換行
-                    .replace(/\n\n/g, '</p><p>')
-                    .replace(/\n/g, '<br/>')
-                    // 轉換粗體
-                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-                    // 包裝成段落
-                    .replace(/^/, '<p>')
-                    .replace(/$/, '</p>')
+                  __html: sanitizeHtml(
+                    aiInsight
+                      .replace(/\n\n/g, '</p><p>')
+                      .replace(/\n/g, '<br/>')
+                      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                      .replace(/^/, '<p>')
+                      .replace(/$/, '</p>')
+                  )
                 }}
               />
             </div>
