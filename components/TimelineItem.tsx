@@ -21,11 +21,13 @@ import { ItineraryItem, TransportType } from '../types';
 import { TransportIcon } from './TransportIcon';
 // import { NearbyRestaurants } from './NearbyRestaurants'; // Refactored to Lazy Load
 const NearbyRestaurants = React.lazy(() => import('./NearbyRestaurants').then(m => ({ default: m.NearbyRestaurants })));
+const FoursquareRestaurants = React.lazy(() => import('./FoursquareRestaurants').then(m => ({ default: m.FoursquareRestaurants })));
 import { getPlaceInsight } from '../utils/gemini';
 import { searchNearbyRestaurants, searchPlaceByName } from '../utils/places';
 import { downloadICS } from '../utils/calendar';
 // Removed static ITINERARY_DATA import — dayDate is now passed as prop
 import { ProgressCheckbox } from './ProgressTracker';
+import { PlacePhoto } from './PlacePhoto';
 
 interface TimelineItemProps {
   item: ItineraryItem;
@@ -74,6 +76,7 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
   const [aiLoading, setAiLoading] = useState(false);
   const [aiInsight, setAiInsight] = useState<string | null>(null);
   const [showNearbyRestaurants, setShowNearbyRestaurants] = useState(false);
+  const [restaurantSource, setRestaurantSource] = useState<'google' | 'foursquare'>('google');
 
   // Auto-lookup state
   const [isSearching, setIsSearching] = useState(false);
@@ -416,6 +419,9 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
           </div>
         )}
 
+        {/* Place Photo (Unsplash) — 只在展開時載入 */}
+        <PlacePhoto placeName={item.title} enabled={isActive} />
+
         {/* Description & Transport */}
         <div className="mb-4 md:mb-5 pl-1">
           {isEditing ? (
@@ -495,7 +501,73 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
           )}
 
           {/* Nearby Restaurants */}
-          {/* Nearby Restaurants - Lazy Loaded */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
+              <Utensils size={12} /> 附近美食
+            </div>
+
+            {showNearbyRestaurants && (
+              <div className="flex bg-gray-100 p-0.5 rounded-lg">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setRestaurantSource('google'); }}
+                  className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${restaurantSource === 'google' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+                    }`}
+                >
+                  Google
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setRestaurantSource('foursquare'); }}
+                  className={`px-2 py-0.5 text-[10px] font-bold rounded-md transition-all ${restaurantSource === 'foursquare' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'
+                    }`}
+                >
+                  Foursquare
+                </button>
+              </div>
+            )}
+          </div>
+
+          <React.Suspense fallback={
+            <div className="h-12 w-full bg-gray-50 rounded-lg animate-pulse flex items-center justify-center text-xs text-gray-400">
+              載入餐廳資訊元件...
+            </div>
+          }>
+            {restaurantSource === 'google' ? (
+              <NearbyRestaurants
+                lat={item.coordinates.lat}
+                lng={item.coordinates.lng}
+                locationName={item.title}
+                isExpanded={showNearbyRestaurants}
+                onToggle={() => setShowNearbyRestaurants(!showNearbyRestaurants)}
+                onHover={onRestaurantHover}
+              />
+            ) : (
+              <div className="mt-2">
+                {!showNearbyRestaurants ? (
+                  <button
+                    onClick={() => setShowNearbyRestaurants(true)}
+                    className="w-full py-2 text-xs font-bold text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors border border-primary-100"
+                  >
+                    顯示 Foursquare 美食推薦
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setShowNearbyRestaurants(false)}
+                      className="w-full py-1 text-xs text-gray-400 hover:text-gray-600 mb-2 transition-colors"
+                    >
+                      隱藏列表
+                    </button>
+                    <FoursquareRestaurants
+                      lat={item.coordinates.lat}
+                      lng={item.coordinates.lng}
+                      isExpanded={true}
+                      onHover={onRestaurantHover}
+                    />
+                  </>
+                )}
+              </div>
+            )}
+          </React.Suspense>
           <React.Suspense fallback={
             <div className="h-12 w-full bg-gray-50 rounded-lg animate-pulse flex items-center justify-center text-xs text-gray-400">
               載入餐廳資訊元件...

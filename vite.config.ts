@@ -26,7 +26,10 @@ export default defineConfig(({ mode }) => {
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GOOGLE_PLACES_API_KEY': JSON.stringify(env.GOOGLE_PLACES_API_KEY)
+        'process.env.GOOGLE_PLACES_API_KEY': JSON.stringify(env.GOOGLE_PLACES_API_KEY),
+        'process.env.UNSPLASH_ACCESS_KEY': JSON.stringify(env.UNSPLASH_ACCESS_KEY || ''),
+        'process.env.MAPBOX_ACCESS_TOKEN': JSON.stringify(env.MAPBOX_ACCESS_TOKEN || ''),
+        'process.env.FOURSQUARE_API_KEY': JSON.stringify(env.FOURSQUARE_API_KEY || '')
       },
       resolve: {
         alias: {
