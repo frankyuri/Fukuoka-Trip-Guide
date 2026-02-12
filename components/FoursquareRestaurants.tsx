@@ -152,7 +152,7 @@ export const FoursquareRestaurants: React.FC<FoursquareRestaurantsProps> = ({
                 {filteredVenues.slice(0, 10).map((venue) => (
                     <div
                         key={venue.id}
-                        className="group/venue bg-white rounded-xl border border-gray-100 p-3 hover:shadow-md hover:border-primary-100 transition-all cursor-pointer relative overflow-hidden"
+                        className="group/venue bg-white rounded-xl border border-gray-100 p-3 hover:shadow-md hover:border-primary-100 active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden"
                         onMouseEnter={() => onHover?.({ lat: venue.location.lat, lng: venue.location.lng })}
                         onMouseLeave={() => onHover?.(null)}
                         onClick={() => window.open(`https://foursquare.com/v/${venue.id}`, '_blank')}

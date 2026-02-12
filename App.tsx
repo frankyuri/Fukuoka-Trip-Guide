@@ -88,6 +88,14 @@ const App: React.FC = () => {
   const [mobileViewMode, setMobileViewMode] = useState<'list' | 'map'>('list');
   const [dbError, setDbError] = useState<string | null>(null);
 
+  // Detect mobile viewport for conditional rendering (unmount DayMap in list mode)
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1024);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // Listen for DB error events dispatched from db.ts
   useEffect(() => {
     const handleDbError = (e: Event) => {
@@ -427,35 +435,37 @@ const App: React.FC = () => {
             <Footer />
           </div>
 
-          {/* Right: Map */}
-          <div className={`order-1 lg:order-2 lg:w-2/5 ${mobileViewMode === 'list' ? 'hidden lg:block' : 'block'}`}>
+          {/* Right: Map — conditionally unmount on mobile list mode to save resources */}
+          {(!isMobile || mobileViewMode === 'map') && (
+            <div className={`order-1 lg:order-2 lg:w-2/5 block`}>
 
-            {/* Desktop Layout: Sticky Sidebar */}
-            <div className={`
+              {/* Desktop Layout: Sticky Sidebar */}
+              <div className={`
               flex flex-col gap-4
               ${mobileViewMode === 'map'
-                ? 'h-[85vh] w-full'
-                : 'lg:sticky lg:top-8 lg:h-[calc(100vh-60px)]'}
+                  ? 'h-[85vh] w-full'
+                  : 'lg:sticky lg:top-8 lg:h-[calc(100vh-60px)]'}
             `}>
 
-              {/* Map Container */}
-              <div className="flex-grow w-full rounded-3xl shadow-float overflow-hidden relative min-h-[300px]">
-                <Suspense fallback={<MapLoadingFallback />}>
-                  <DayMap
-                    items={activeDay.items}
-                    activeItemId={activeItemId}
-                    highlightedLocation={highlightedLocation}
-                  />
-                </Suspense>
-              </div>
+                {/* Map Container */}
+                <div className="flex-grow w-full rounded-3xl shadow-float overflow-hidden relative min-h-[300px]">
+                  <Suspense fallback={<MapLoadingFallback />}>
+                    <DayMap
+                      items={activeDay.items}
+                      activeItemId={activeItemId}
+                      highlightedLocation={highlightedLocation}
+                    />
+                  </Suspense>
+                </div>
 
-              {mobileViewMode === 'map' && (
-                <p className="text-center text-xs text-slate-400 lg:hidden">
-                  點擊地標查看詳情，或切換回列表模式瀏覽行程
-                </p>
-              )}
+                {mobileViewMode === 'map' && (
+                  <p className="text-center text-xs text-slate-400 lg:hidden">
+                    點擊地標查看詳情，或切換回列表模式瀏覽行程
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
         </div>
       </main>
