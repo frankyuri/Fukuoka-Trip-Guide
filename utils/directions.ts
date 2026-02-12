@@ -56,13 +56,12 @@ const getMapboxProfile = (transportType: TransportType): MapboxProfile => {
 // 快取機制
 // ======================================
 
-const CACHE_PREFIX = 'fuka_directions_';
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 小時
+import { createCache } from './cache';
 
-interface CacheEntry {
-  data: RouteResult;
-  timestamp: number;
-}
+const routeCache = createCache<RouteResult>({
+  prefix: 'fuka_directions_',
+  duration: 24 * 60 * 60 * 1000, // 24 小時
+});
 
 /**
  * 產生快取 key（基於起終點和模式）
@@ -74,33 +73,7 @@ const makeCacheKey = (
 ): string => {
   // 四捨五入到小數第四位，避免因微小差異造成快取失效
   const round = (n: number) => Math.round(n * 10000) / 10000;
-  return `${CACHE_PREFIX}${round(startLat)}_${round(startLng)}_${round(endLat)}_${round(endLng)}_${profile}`;
-};
-
-const getFromCache = (key: string): RouteResult | null => {
-  try {
-    const stored = localStorage.getItem(key);
-    if (!stored) return null;
-
-    const entry: CacheEntry = JSON.parse(stored);
-    if (Date.now() - entry.timestamp < CACHE_DURATION) {
-      return entry.data;
-    }
-
-    localStorage.removeItem(key);
-  } catch {
-    // ignore
-  }
-  return null;
-};
-
-const saveToCache = (key: string, data: RouteResult): void => {
-  try {
-    const entry: CacheEntry = { data, timestamp: Date.now() };
-    localStorage.setItem(key, JSON.stringify(entry));
-  } catch {
-    // localStorage 滿了，忽略
-  }
+  return `${round(startLat)}_${round(startLng)}_${round(endLat)}_${round(endLng)}_${profile}`;
 };
 
 // ======================================
@@ -142,7 +115,7 @@ export const fetchRoute = async (
 
   // 2. 檢查快取
   const cacheKey = makeCacheKey(startLat, startLng, endLat, endLng, profile);
-  const cached = getFromCache(cacheKey);
+  const cached = routeCache.get(cacheKey);
   if (cached) {
     return cached;
   }
@@ -185,7 +158,7 @@ export const fetchRoute = async (
       profile,
     };
 
-    saveToCache(cacheKey, result);
+    routeCache.set(cacheKey, result);
     return result;
   } catch (error) {
     console.error('[Mapbox] 路線查詢錯誤:', error);

@@ -24,7 +24,7 @@ const NearbyRestaurants = React.lazy(() => import('./NearbyRestaurants').then(m 
 const FoursquareRestaurants = React.lazy(() => import('./FoursquareRestaurants').then(m => ({ default: m.FoursquareRestaurants })));
 import { getPlaceInsight } from '../utils/gemini';
 import { searchNearbyRestaurants, searchPlaceByName } from '../utils/places';
-import { downloadICS } from '../utils/calendar';
+import { downloadICS } from '../utils/exportImport';
 // Removed static ITINERARY_DATA import — dayDate is now passed as prop
 import { ProgressCheckbox } from './ProgressTracker';
 import { PlacePhoto } from './PlacePhoto';

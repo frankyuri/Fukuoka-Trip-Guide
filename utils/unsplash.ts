@@ -35,47 +35,45 @@ export interface PlacePhotoResult {
 // 快取機制
 // ======================================
 
-const CACHE_PREFIX = 'fuka_unsplash_';
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 小時
+import { createCache } from './cache';
 
-interface CacheEntry {
-  data: PlacePhotoResult | null;
-  timestamp: number;
-}
+// Cache supports null values (meaning "no photo found" — avoids re-querying)
+const photoCache = createCache<PlacePhotoResult | null>({
+  prefix: 'fuka_unsplash_',
+  duration: 24 * 60 * 60 * 1000, // 24 小時
+});
 
 /**
- * 從 localStorage 讀取快取
+ * Check cache — returns undefined if not cached, null if cached-as-empty, or the result
  */
-const getFromCache = (query: string): PlacePhotoResult | null | undefined => {
+const getFromPhotoCache = (query: string): PlacePhotoResult | null | undefined => {
+  const key = btoa(encodeURIComponent(query));
+  // We store null explicitly to mean "no result". We rely on the cache returning null
+  // for both "not found in cache" and "cached as null". To distinguish, we check localStorage directly.
   try {
-    const key = CACHE_PREFIX + btoa(encodeURIComponent(query));
-    const stored = localStorage.getItem(key);
-    if (!stored) return undefined;
-
-    const entry: CacheEntry = JSON.parse(stored);
-    if (Date.now() - entry.timestamp < CACHE_DURATION) {
-      return entry.data; // 可能是 null（表示查無結果）
-    }
-
-    // 過期，刪除
-    localStorage.removeItem(key);
+    const raw = localStorage.getItem('fuka_unsplash_' + key);
+    if (!raw) return undefined; // not cached at all
   } catch {
-    // ignore
+    return undefined;
   }
-  return undefined;
+  // Entry exists — delegate to cache (handles expiry)
+  const result = photoCache.get(key);
+  if (result === null) {
+    // Cache returned null — could be expired (entry deleted) or cached-as-null
+    try {
+      const raw = localStorage.getItem('fuka_unsplash_' + key);
+      if (!raw) return undefined; // expired and removed
+    } catch {
+      return undefined;
+    }
+    return null; // genuinely cached as null
+  }
+  return result;
 };
 
-/**
- * 寫入快取
- */
-const saveToCache = (query: string, data: PlacePhotoResult | null): void => {
-  try {
-    const key = CACHE_PREFIX + btoa(encodeURIComponent(query));
-    const entry: CacheEntry = { data, timestamp: Date.now() };
-    localStorage.setItem(key, JSON.stringify(entry));
-  } catch {
-    // localStorage 滿了或不可用，忽略
-  }
+const saveToPhotoCache = (query: string, data: PlacePhotoResult | null): void => {
+  const key = btoa(encodeURIComponent(query));
+  photoCache.set(key, data);
 };
 
 // ======================================
@@ -106,7 +104,7 @@ export const searchPlacePhoto = async (
   }
 
   // 2. 檢查快取
-  const cached = getFromCache(placeName);
+  const cached = getFromPhotoCache(placeName);
   if (cached !== undefined) {
     return cached;
   }
@@ -135,7 +133,7 @@ export const searchPlacePhoto = async (
     const data = await response.json();
 
     if (!data.results || data.results.length === 0) {
-      saveToCache(placeName, null); // 快取 "無結果"
+      saveToPhotoCache(placeName, null); // 快取 "無結果"
       return null;
     }
 
@@ -150,7 +148,7 @@ export const searchPlacePhoto = async (
       height: photo.height || 720,
     };
 
-    saveToCache(placeName, result);
+    saveToPhotoCache(placeName, result);
     return result;
   } catch (error) {
     console.error('[Unsplash] 搜尋錯誤:', error);

@@ -115,38 +115,16 @@ const getCategoryEmoji = (categoryName: string): string => {
 // 快取機制
 // ======================================
 
-const CACHE_PREFIX = 'fuka_fsq_';
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 小時
+import { createCache } from './cache';
 
-interface CacheEntry {
-  data: FoursquareVenue[];
-  timestamp: number;
-}
+const venueCache = createCache<FoursquareVenue[]>({
+  prefix: 'fuka_fsq_',
+  duration: 24 * 60 * 60 * 1000, // 24 小時
+});
 
 const makeCacheKey = (lat: number, lng: number, radius: number): string => {
   const round = (n: number) => Math.round(n * 1000) / 1000;
-  return `${CACHE_PREFIX}${round(lat)}_${round(lng)}_${radius}`;
-};
-
-const getFromCache = (key: string): FoursquareVenue[] | null => {
-  try {
-    const stored = localStorage.getItem(key);
-    if (!stored) return null;
-    const entry: CacheEntry = JSON.parse(stored);
-    if (Date.now() - entry.timestamp < CACHE_DURATION) return entry.data;
-    localStorage.removeItem(key);
-  } catch {
-    // ignore
-  }
-  return null;
-};
-
-const saveToCache = (key: string, data: FoursquareVenue[]): void => {
-  try {
-    localStorage.setItem(key, JSON.stringify({ data, timestamp: Date.now() }));
-  } catch {
-    // ignore
-  }
+  return `${round(lat)}_${round(lng)}_${radius}`;
 };
 
 // ======================================
@@ -175,7 +153,7 @@ export const searchFoursquareVenues = async (
 
   // 2. 檢查快取
   const cacheKey = makeCacheKey(lat, lng, radius);
-  const cached = getFromCache(cacheKey);
+  const cached = venueCache.get(cacheKey);
   if (cached) {
     return { venues: cached, apiUnavailable: false };
   }
@@ -255,7 +233,7 @@ export const searchFoursquareVenues = async (
       };
     });
 
-    saveToCache(cacheKey, venues);
+    venueCache.set(cacheKey, venues);
     return { venues, apiUnavailable: false };
   } catch (error) {
     console.error('[Foursquare] 搜尋錯誤:', error);

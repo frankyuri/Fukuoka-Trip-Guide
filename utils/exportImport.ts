@@ -163,3 +163,52 @@ export const exportAllICS = (itinerary: DayItinerary[]) => {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 };
+
+// === Single Item ICS Download ===
+
+/**
+ * Download a single itinerary item as an ICS file.
+ * (Consolidated from calendar.ts — reuses formatICSDate / escapeICS above)
+ */
+export const downloadICS = (item: ItineraryItem, dateStr: string) => {
+  const dateMatch = dateStr.match(/(\d{1,2})\/(\d{1,2})/);
+  if (!dateMatch) return;
+
+  const month = parseInt(dateMatch[1], 10);
+  const day = parseInt(dateMatch[2], 10);
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const tentativeDate = new Date(currentYear, month - 1, day);
+  const year = tentativeDate < now ? currentYear + 1 : currentYear;
+
+  const [hours, minutes] = item.time.split(':').map(Number);
+  const startDate = new Date(year, month - 1, day, hours, minutes);
+  const endDate = new Date(startDate.getTime() + 90 * 60000);
+
+  const icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Fukuoka Trip Guide//EN',
+    'BEGIN:VEVENT',
+    `UID:${item.id}@fukuokatrip.com`,
+    `DTSTAMP:${formatICSDate(now)}`,
+    `DTSTART:${formatICSDate(startDate)}`,
+    `DTEND:${formatICSDate(endDate)}`,
+    `SUMMARY:${escapeICS(item.title)}`,
+    `DESCRIPTION:${escapeICS(item.description)}\\n${escapeICS(item.transportDetail)}`,
+    `LOCATION:${escapeICS(item.address_jp)}`,
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\r\n');
+
+  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${item.title}.ics`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};

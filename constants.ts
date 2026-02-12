@@ -20,4 +20,10 @@ import { loadItineraryData, loadItineraryData2 } from './utils/dataLoader';
  * 若要更新行程資料，請直接編輯對應的 JSON 檔案
  */
 export const ITINERARY_DATA: DayItinerary[] = loadItineraryData();
-export const ITINERARY_DATA_2: DayItinerary[] = loadItineraryData2();
+
+/** Lazy-loaded Plan 2 data — only parsed when first accessed */
+let _plan2: DayItinerary[] | null = null;
+export const getItineraryData2 = (): DayItinerary[] => {
+  if (!_plan2) _plan2 = loadItineraryData2();
+  return _plan2;
+};

@@ -1,5 +1,5 @@
 import { DayItinerary } from '../types';
-import { ITINERARY_DATA, ITINERARY_DATA_2 } from '../constants';
+import { ITINERARY_DATA, getItineraryData2 } from '../constants';
 import { ItineraryPlanType } from './dataLoader';
 
 const DB_NAME = 'fukuoka-trip-db';
@@ -18,23 +18,32 @@ const getStoreName = (plan: ItineraryPlanType): string => {
  * 根據方案取得對應的預設資料
  */
 const getDefaultData = (plan: ItineraryPlanType): DayItinerary[] => {
-  return plan === 'plan1' ? ITINERARY_DATA : ITINERARY_DATA_2;
+  return plan === 'plan1' ? ITINERARY_DATA : getItineraryData2();
 };
 
 /**
  * Initialize the database (Native API)
  */
+/** Cached DB connection — avoids opening a new IDB connection on every operation */
+let dbPromise: Promise<IDBDatabase> | null = null;
+
 const openDB = (): Promise<IDBDatabase> => {
-  return new Promise((resolve, reject) => {
+  if (dbPromise) return dbPromise;
+
+  dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onerror = (event) => {
       console.error('Database error:', (event.target as IDBOpenDBRequest).error);
+      dbPromise = null; // Reset so next call retries
       reject((event.target as IDBOpenDBRequest).error);
     };
 
     request.onsuccess = (event) => {
-      resolve((event.target as IDBOpenDBRequest).result);
+      const db = (event.target as IDBOpenDBRequest).result;
+      // Reset cache if connection is closed externally
+      db.onclose = () => { dbPromise = null; };
+      resolve(db);
     };
 
     request.onupgradeneeded = (event) => {
@@ -49,6 +58,8 @@ const openDB = (): Promise<IDBDatabase> => {
       }
     };
   });
+
+  return dbPromise;
 };
 
 /**

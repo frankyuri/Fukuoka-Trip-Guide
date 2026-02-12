@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { DayItinerary, ItineraryItem, TransportType } from '../types';
 import { getAllItineraries, saveDayItinerary, deleteDayItinerary, resetItineraries } from '../utils/db';
-import { ITINERARY_DATA, ITINERARY_DATA_2 } from '../constants'; // Fallback
+import { ITINERARY_DATA, getItineraryData2 } from '../constants'; // Fallback
 import { ItineraryPlanType } from '../utils/dataLoader';
 
 export const useItinerary = () => {
@@ -12,7 +12,7 @@ export const useItinerary = () => {
 
   // Get fallback data based on active plan
   const getFallbackData = useCallback(() => {
-    return activePlan === 'plan1' ? ITINERARY_DATA : ITINERARY_DATA_2;
+    return activePlan === 'plan1' ? ITINERARY_DATA : getItineraryData2();
   }, [activePlan]);
 
   // Load from DB on mount and when plan changes

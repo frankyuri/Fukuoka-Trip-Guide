@@ -17,6 +17,7 @@ import { Filter, X, Star, Utensils, ExternalLink, MapPin, Crosshair, Navigation 
 import { TransportIcon, getTransportLabel } from './TransportIcon';
 import { searchNearbyRestaurants, NearbyRestaurant, formatDistance, calculateDistance } from '../utils/places';
 import { fetchRoute, formatDuration, formatRouteDistance, RouteResult } from '../utils/directions';
+import { useI18n } from '../i18n';
 
 // ======================================
 // 型別定義
@@ -150,6 +151,7 @@ const addRestaurantMarkersToMap = (
  * ```
  */
 export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlightedLocation }) => {
+  const { t } = useI18n();
   // ====== Refs ======
   /** 地圖容器的 DOM 參考 */
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -749,7 +751,7 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
         >
           {isFilterOpen ? <X size={20} /> : <Filter size={20} />}
           <span className="text-sm font-bold hidden md:block">
-            {activeFilter === 'ALL' ? '交通篩選' : getTransportLabel(activeFilter)}
+            {activeFilter === 'ALL' ? t('mapFilter') : getTransportLabel(activeFilter, t)}
           </span>
         </button>
 
@@ -759,7 +761,7 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
               onClick={() => { setActiveFilter('ALL'); setIsFilterOpen(false); }}
               className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between ${activeFilter === 'ALL' ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-100'}`}
             >
-              <span>全部顯示</span>
+              <span>{t('mapAllItems')}</span>
               {activeFilter === 'ALL' && <div className="w-2 h-2 bg-primary-500 rounded-full"></div>}
             </button>
             <hr className="border-gray-100 my-1" />
@@ -770,7 +772,7 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
                 className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center gap-2 ${activeFilter === type ? 'bg-primary-50 text-primary-700' : 'text-gray-600 hover:bg-gray-100'}`}
               >
                 {renderTransportIcon(type)}
-                {getTransportLabel(type)}
+                {getTransportLabel(type, t)}
               </button>
             ))}
           </div>
