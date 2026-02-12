@@ -227,6 +227,7 @@ export const useItinerary = () => {
     addItem,
     deleteItem,
     addDay,
+    deleteDay,
     resetToDefault,
     activePlan,
     switchPlan,

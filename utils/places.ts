@@ -175,8 +175,11 @@ const waitForGoogleMaps = (): Promise<void> => {
       return;
     }
     
+    let expired = false;
+
     // 輪詢檢查 API 是否載入
     const checkLoaded = () => {
+      if (expired) return; // 超時後停止輪詢
       if ((window as any).google?.maps?.places) {
         resolve();
       } else {
@@ -189,12 +192,15 @@ const waitForGoogleMaps = (): Promise<void> => {
     if ((window as any).googleMapsLoaded) {
       checkLoaded();
     } else {
-      // 監聽自訂事件（在 index.html 中觸發）
+      // 監聯自訂事件（在 index.html 中觸發）
       window.addEventListener('google-maps-loaded', checkLoaded);
     }
     
     // 10 秒後超時，避免無限等待
-    setTimeout(() => resolve(), 10000);
+    setTimeout(() => {
+      expired = true;
+      resolve();
+    }, 10000);
   });
 };
 

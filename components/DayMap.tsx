@@ -99,6 +99,40 @@ const TILE_LAYERS = {
  */
 const renderTransportIcon = (type: TransportType) => <TransportIcon type={type} size={16} />;
 
+/**
+ * 建立餐廳標記並加到地圖上
+ * @returns 建立的 marker 陣列
+ */
+const addRestaurantMarkersToMap = (
+  map: L.Map,
+  restaurants: { name: string; rating?: number; location?: { lat: number; lng: number } }[]
+): L.Marker[] => {
+  const markers: L.Marker[] = [];
+  restaurants.forEach((restaurant) => {
+    if (!restaurant.location) return;
+
+    const restaurantIcon = L.divIcon({
+      className: 'restaurant-marker-icon',
+      html: `
+        <div class="restaurant-pin">
+          <span class="restaurant-name">${restaurant.name.slice(0, 8)}${restaurant.name.length > 8 ? '...' : ''}</span>
+          ${restaurant.rating ? `<span class="restaurant-rating">★${restaurant.rating}</span>` : ''}
+        </div>
+      `,
+      iconSize: [80, 40],
+      iconAnchor: [40, 40],
+    });
+
+    const marker = L.marker(
+      [restaurant.location.lat, restaurant.location.lng],
+      { icon: restaurantIcon }
+    ).addTo(map);
+
+    markers.push(marker);
+  });
+  return markers;
+};
+
 // ======================================
 // 主元件
 // ======================================
@@ -414,29 +448,7 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
                 setNearbyRestaurants(result.restaurants.slice(0, 5)); // 最多顯示 5 間
 
                 // 建立餐廳標記
-                result.restaurants.slice(0, 5).forEach((restaurant) => {
-                  if (!restaurant.location) return;
-
-                  // 建立餐廳標記圖示（小型、橘色）
-                  const restaurantIcon = L.divIcon({
-                    className: 'restaurant-marker-icon',
-                    html: `
-                      <div class="restaurant-pin">
-                        <span class="restaurant-name">${restaurant.name.slice(0, 8)}${restaurant.name.length > 8 ? '...' : ''}</span>
-                        ${restaurant.rating ? `<span class="restaurant-rating">★${restaurant.rating}</span>` : ''}
-                      </div>
-                    `,
-                    iconSize: [80, 40],
-                    iconAnchor: [40, 40],
-                  });
-
-                  const restaurantMarker = L.marker(
-                    [restaurant.location.lat, restaurant.location.lng],
-                    { icon: restaurantIcon }
-                  ).addTo(map);
-
-                  restaurantMarkersRef.current.push(restaurantMarker);
-                });
+                restaurantMarkersRef.current = addRestaurantMarkersToMap(map, result.restaurants.slice(0, 5));
               }
             } catch (err) {
               console.error('Failed to fetch nearby restaurants:', err);
@@ -591,28 +603,7 @@ export const DayMap = React.memo<DayMapProps>(({ items, activeItemId, highlighte
 
             const map = mapInstanceRef.current;
             if (map) {
-              result.restaurants.slice(0, 10).forEach((restaurant) => {
-                if (!restaurant.location) return;
-
-                const restaurantIcon = L.divIcon({
-                  className: 'restaurant-marker-icon',
-                  html: `
-                    <div class="restaurant-pin">
-                      <span class="restaurant-name">${restaurant.name.slice(0, 8)}${restaurant.name.length > 8 ? '...' : ''}</span>
-                      ${restaurant.rating ? `<span class="restaurant-rating">★${restaurant.rating}</span>` : ''}
-                    </div>
-                  `,
-                  iconSize: [80, 40],
-                  iconAnchor: [40, 40],
-                });
-
-                const marker = L.marker(
-                  [restaurant.location.lat, restaurant.location.lng],
-                  { icon: restaurantIcon }
-                ).addTo(map);
-
-                restaurantMarkersRef.current.push(marker);
-              });
+              restaurantMarkersRef.current = addRestaurantMarkersToMap(map, result.restaurants.slice(0, 10));
             }
           }
         } catch (err) {

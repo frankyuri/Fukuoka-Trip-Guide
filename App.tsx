@@ -41,6 +41,7 @@ const App: React.FC = () => {
   const { itinerary, loading, isEditing, setIsEditing, updateItem, addItem, deleteItem, addDay, resetToDefault, activePlan, switchPlan, importItinerary } = useItinerary();
   const { t, locale, setLocale } = useI18n();
   const [showLangMenu, setShowLangMenu] = useState(false);
+  const [successToast, setSuccessToast] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Handle JSON import
@@ -58,12 +59,8 @@ const App: React.FC = () => {
       await importItinerary(result.data);
       setDbError(null);
       // Show success toast briefly
-      setDbError(null);
-      const toast = document.createElement('div');
-      toast.className = 'fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium';
-      toast.textContent = t('importSuccess');
-      document.body.appendChild(toast);
-      setTimeout(() => { document.body.removeChild(toast); }, 3000);
+      setSuccessToast(t('importSuccess'));
+      setTimeout(() => setSuccessToast(null), 3000);
     } else {
       setDbError(t('importError'));
     }
@@ -132,16 +129,7 @@ const App: React.FC = () => {
     setMobileViewMode('list');
   }, [activeDayIndex]);
 
-  // Database Error Listener - Global Handling
-  useEffect(() => {
-    const handleDbError = (e: CustomEvent) => {
-      setDbError(e.detail?.message || '儲存失敗');
-      setTimeout(() => setDbError(null), 5000); // Auto dismiss after 5s
-    };
 
-    window.addEventListener('db-error', handleDbError as EventListener);
-    return () => window.removeEventListener('db-error', handleDbError as EventListener);
-  }, []);
 
   const activeDay = itinerary[activeDayIndex] || itinerary[0]; // Fallback while loading
   const activeDayDate = activeDay?.date; // Stable ref for callbacks
@@ -513,6 +501,13 @@ const App: React.FC = () => {
           >
             ✕
           </button>
+        </div>
+      )}
+
+      {/* Success Toast */}
+      {successToast && (
+        <div className="fixed bottom-20 lg:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-medium animate-in fade-in slide-in-from-bottom-4 duration-300">
+          {successToast}
         </div>
       )}
 

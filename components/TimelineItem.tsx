@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   MapPin,
   Copy,
@@ -78,6 +78,12 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
   const [showNearbyRestaurants, setShowNearbyRestaurants] = useState(false);
   const [restaurantSource, setRestaurantSource] = useState<'google' | 'foursquare'>('google');
 
+  // Stable refs to avoid stale closures in useEffect
+  const onUpdateRef = useRef(onUpdate);
+  onUpdateRef.current = onUpdate;
+  const itemRef = useRef(item);
+  itemRef.current = item;
+
   // Auto-lookup state
   const [isSearching, setIsSearching] = useState(false);
 
@@ -133,32 +139,24 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
     if (item.title.length < 2) return;
 
     const timeoutId = setTimeout(async () => {
-      // Only run auto-search if not already searching (simple check)
-      // Actually let's just use the manual function logic effectively but silent?
-      // For now, let's DISABLE the auto-debounce effect if we want strict "Save" button control,
-      // OR keep it for "Live update". The user Complaint was "No save button".
-      // So adding the button fixes the complaint. I'll keep the debounce for seamless experience.
-
-      // ... existing debounce logic ...
       setIsSearching(true);
       try {
-        const result = await searchPlaceByName(item.title);
-        if (result && onUpdate) {
-          onUpdate({
-            ...item,
-            address_jp: result.address || item.address_jp,
+        const currentItem = itemRef.current;
+        const result = await searchPlaceByName(currentItem.title);
+        if (result && onUpdateRef.current) {
+          onUpdateRef.current({
+            ...currentItem,
+            address_jp: result.address || currentItem.address_jp,
             coordinates: { lat: result.lat, lng: result.lng },
             googleMapsQuery: result.name
           });
-          // Note: We probably DON'T want to auto-fly map on type-debounce as it might be annoying while typing.
-          // vs Manual Search button which SHOULD fly.
         }
       } catch (e) {
         console.error('Auto lookup failed', e);
       } finally {
         setIsSearching(false);
       }
-    }, 2000); // Increased debounce to 2s to make manual button more useful
+    }, 2000);
 
     return () => clearTimeout(timeoutId);
   }, [item.title, isEditing]);
@@ -568,20 +566,7 @@ export const TimelineItem = React.memo<TimelineItemProps>(({
               </div>
             )}
           </React.Suspense>
-          <React.Suspense fallback={
-            <div className="h-12 w-full bg-gray-50 rounded-lg animate-pulse flex items-center justify-center text-xs text-gray-400">
-              載入餐廳資訊元件...
-            </div>
-          }>
-            <NearbyRestaurants
-              lat={item.coordinates.lat}
-              lng={item.coordinates.lng}
-              locationName={item.title}
-              isExpanded={showNearbyRestaurants}
-              onToggle={() => setShowNearbyRestaurants(!showNearbyRestaurants)}
-              onHover={onRestaurantHover}
-            />
-          </React.Suspense>
+
         </div>
 
         {/* Footer: Address */}
