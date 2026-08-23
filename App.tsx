@@ -42,10 +42,19 @@ const App: React.FC = () => {
 
   const [activeDayIndex, setActiveDayIndex] = useState(getInitialDayIndex);
   const [activeItemId, setActiveItemId] = useState<string | null>(null);
+  const [isDesktop, setIsDesktop] = useState(() => window.matchMedia('(min-width: 1024px)').matches);
 
   // Mobile View State: 'list' or 'map'. Default to 'list' on mobile.
   // On Desktop, this state is ignored as we show both.
   const [mobileViewMode, setMobileViewMode] = useState<'list' | 'map'>('list');
+  const isMapVisible = isDesktop || mobileViewMode === 'map';
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+    const onChange = () => setIsDesktop(mediaQuery.matches);
+    mediaQuery.addEventListener('change', onChange);
+    return () => mediaQuery.removeEventListener('change', onChange);
+  }, []);
 
   // Update URL when day changes (for shareable links)
   useEffect(() => {
@@ -178,7 +187,7 @@ const App: React.FC = () => {
               ${mobileViewMode === 'map' ? 'h-[75vh] w-full rounded-3xl shadow-2xl' : 'h-[350px] lg:sticky lg:top-8 lg:h-[calc(100vh-60px)]'}
             `}>
               <Suspense fallback={<MapLoadingFallback />}>
-                <DayMap items={activeDay.items} activeItemId={activeItemId} />
+                <DayMap items={activeDay.items} activeItemId={activeItemId} mapVisible={isMapVisible} />
               </Suspense>
             </div>
 

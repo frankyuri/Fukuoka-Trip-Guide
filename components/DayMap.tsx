@@ -7,6 +7,7 @@ import { getTransportLabel, TransportIcon } from './TransportIcon';
 interface DayMapProps {
   items: ItineraryItem[];
   activeItemId?: string | null;
+  mapVisible?: boolean;
 }
 
 const TILE_LAYERS = {
@@ -33,10 +34,17 @@ const escapeHtml = (value: string): string =>
     "'": '&#039;',
   })[character] ?? character);
 
-export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId }) => {
+const isMapContainerReady = (container: HTMLElement | null): container is HTMLElement =>
+  Boolean(container && container.offsetParent !== null && container.clientWidth > 0 && container.clientHeight > 0);
+
+const isValidLatLng = (lat: number, lng: number): boolean =>
+  Number.isFinite(lat) && Number.isFinite(lng);
+
+export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId, mapVisible = true }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
+  const pendingBoundsRef = useRef<L.LatLngBounds | null>(null);
   const resizeTimerRef = useRef<number | null>(null);
   const highlightTimerRef = useRef<number | null>(null);
   const [activeFilter, setActiveFilter] = useState<TransportType | 'ALL'>('ALL');
@@ -70,8 +78,46 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId }) => {
       map.remove();
       mapInstanceRef.current = null;
       markersRef.current.clear();
+      pendingBoundsRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    const container = mapContainerRef.current;
+    if (!container) return;
+
+    const applyPendingBounds = () => {
+      const map = mapInstanceRef.current;
+      const bounds = pendingBoundsRef.current;
+      if (!map || !bounds || !isMapContainerReady(container)) return;
+
+      map.invalidateSize();
+      if (bounds.isValid()) {
+        map.flyToBounds(bounds, { padding: [50, 50], duration: 1 });
+      }
+      pendingBoundsRef.current = null;
+    };
+
+    const observer = new ResizeObserver(() => applyPendingBounds());
+    observer.observe(container);
+    applyPendingBounds();
+
+    return () => observer.disconnect();
+  }, []);
+
+  const fitMapToBounds = (map: L.Map, bounds: L.LatLngBounds) => {
+    const container = mapContainerRef.current;
+    if (!bounds.isValid()) return;
+
+    if (!mapVisible || !isMapContainerReady(container)) {
+      pendingBoundsRef.current = bounds;
+      return;
+    }
+
+    map.invalidateSize();
+    map.flyToBounds(bounds, { padding: [50, 50], duration: 1 });
+    pendingBoundsRef.current = null;
+  };
 
   useEffect(() => {
     const map = mapInstanceRef.current;
@@ -85,7 +131,7 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId }) => {
     items.forEach((item, index) => {
       if (activeFilter !== 'ALL' && item.transportType !== activeFilter) return;
       const { lat, lng } = item.coordinates;
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      if (!isValidLatLng(lat, lng)) {
         console.warn(`Invalid coordinates for item: ${item.title}`);
         return;
       }
@@ -121,22 +167,29 @@ export const DayMap: React.FC<DayMapProps> = ({ items, activeItemId }) => {
       visibleMarkerCount += 1;
     });
 
-    if (visibleMarkerCount > 0 && bounds.isValid()) {
-      map.flyToBounds(bounds, { padding: [50, 50], duration: 1 });
+    if (visibleMarkerCount > 0) {
+      fitMapToBounds(map, bounds);
+    } else {
+      pendingBoundsRef.current = null;
+      map.invalidateSize();
     }
-    map.invalidateSize();
-  }, [items, activeFilter]);
+  }, [items, activeFilter, mapVisible]);
 
   useEffect(() => {
     if (!activeItemId) {
       mapInstanceRef.current?.closePopup();
       return;
     }
+    const map = mapInstanceRef.current;
     const marker = markersRef.current.get(activeItemId);
-    if (marker) {
-      marker.openPopup();
-      mapInstanceRef.current?.panTo(marker.getLatLng());
-    }
+    if (!map || !marker || !isMapContainerReady(mapContainerRef.current)) return;
+
+    const { lat, lng } = marker.getLatLng();
+    if (!isValidLatLng(lat, lng)) return;
+
+    marker.openPopup();
+    map.invalidateSize();
+    map.panTo([lat, lng]);
   }, [activeItemId]);
 
   return (
