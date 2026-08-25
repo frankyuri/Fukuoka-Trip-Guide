@@ -136,7 +136,7 @@ export const ja: Record<TranslationKeys, string> = {
   tipGoogleMapsDesc: 'ナビゲーションには必ず日本語の住所を使用してください。英語の住所は位置がずれることがあります。',
   tipJapaneseAddress: '日本語住所',
   tipHotelTitle: 'ホテルの場所',
-  tipHotelDesc: 'Hotel WBF Grande Hakataは博多駅筑紫口から徒歩圏内です。タクシーの場合は日本語の住所を運転手に見せてください。',
+  tipHotelDesc: 'ダイワロイネットホテル名古屋伏見は地下鉄伏見駅6番出口から徒歩約2分（中区栄1-5-21）です。タクシーの場合は日本語の住所を運転手に見せてください。',
   tripDateRange: '2/27 (金) - 3/2 (月) 目的地旅行',
 
   // === ErrorBoundary ===

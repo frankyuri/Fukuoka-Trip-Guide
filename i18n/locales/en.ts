@@ -136,7 +136,7 @@ export const en: Record<TranslationKeys, string> = {
   tipGoogleMapsDesc: 'Always use Japanese addresses for navigation. English addresses can cause location errors, especially when finding specific building entrances.',
   tipJapaneseAddress: 'Japanese address',
   tipHotelTitle: 'Hotel Location',
-  tipHotelDesc: 'Hotel WBF Grande Hakata is within walking distance of Hakata Station Chikushi Exit. For taxis, show the Japanese address to the driver.',
+  tipHotelDesc: 'Daiwa Roynet Hotel Nagoya Fushimi is about a 2-minute walk from Fushimi Station Exit 6 (1-5-21 Sakae, Naka-ku). For taxis, show the Japanese address to the driver.',
   tripDateRange: '2/27 (Fri) - 3/2 (Mon) Destination Trip',
 
   // === ErrorBoundary ===

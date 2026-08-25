@@ -98,12 +98,12 @@ const emergencyContacts: EmergencyContact[] = [
  * 包含中日文名稱、地址、電話、入住/退房時間
  */
 const hotelInfo = {
-    name: 'Hotel WBF Grande Hakata',       // 英文名稱
-    nameJp: 'ホテルWBFグランデ博多',        // 日文名稱（給計程車司機看）
-    address: '目的地市博多区博多駅南 2-2-5',   // 日文地址
-    phone: '+81-92-433-3900',               // 飯店電話
-    checkIn: '15:00',                        // 入住時間
-    checkOut: '10:00'                        // 退房時間
+    name: 'Daiwa Roynet Hotel Nagoya Fushimi',
+    nameJp: 'ダイワロイネットホテル名古屋伏見',
+    address: '愛知県名古屋市中区栄1丁目5-21',
+    phone: '+81-52-265-6186',
+    checkIn: '15:00',
+    checkOut: '11:00'
 };
 
 // ======================================
