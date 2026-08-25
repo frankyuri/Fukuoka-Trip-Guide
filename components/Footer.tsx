@@ -30,7 +30,7 @@ export const Footer: React.FC = () => {
                 <Navigation size={16} /> 關於飯店位置
               </h3>
               <p>
-                <strong>Hotel WBF Grande Hakata</strong> 位於博多站筑紫口步行範圍內，若搭乘計程車，請出示日文地址給司機看，以免混淆。
+                <strong>Daiwa Roynet Hotel Nagoya Fushimi</strong> 位於伏見站 6 號出口步行約 2 分鐘（名古屋市中區榮 1-5-21）。若搭乘計程車，請出示日文地址給司機看，以免混淆。
               </p>
             </div>
           </div>

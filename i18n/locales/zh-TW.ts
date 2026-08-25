@@ -135,7 +135,7 @@ export const zhTW = {
   tipGoogleMapsDesc: '請務必使用日文地址進行導航。英文地址容易造成定位誤差，尤其是在尋找特定建築入口時。',
   tipJapaneseAddress: '日文地址',
   tipHotelTitle: '關於飯店位置',
-  tipHotelDesc: 'Hotel WBF Grande Hakata 位於博多站筑紫口步行範圍內，若搭乘計程車，請出示日文地址給司機看，以免混淆。',
+  tipHotelDesc: 'Daiwa Roynet Hotel Nagoya Fushimi 位於伏見站 6 號出口步行約 2 分鐘（名古屋市中區榮 1-5-21）。若搭乘計程車，請出示日文地址給司機看，以免混淆。',
   tripDateRange: '2/27 (五) - 3/2 (一) 目的地之旅',
 
   // === ErrorBoundary ===
